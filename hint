@@ -1,0 +1,18 @@
+#!/usr/bin/bash
+
+case $1 in
+"lab1")
+echo "
+GDBPORT=8864 make qemu-gdb
+cd OpenCorePkg/Debug ; EFI_DEBUGGER=gdb EFI_ARCH=X64 ./efidebug.tool
+reload-uefi
+
+objdump -p obj/kern/kernel
+objdump -f obj/kern/kernel
+
+b _head64
+layout next ; focus
+info registers rax ; p $rax
+"
+;;
+esac
