@@ -1099,7 +1099,6 @@ UefiMain (
   if (EFI_ERROR (Status)) {
     CpuDeadLoop ();
   }
-
   CallKernelThroughGate (EntryPoint, LoaderParams, GateData);
 
   DEBUG ((DEBUG_INFO, "JOS: KernelCallGate returned\n"));

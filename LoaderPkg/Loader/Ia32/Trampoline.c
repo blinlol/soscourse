@@ -64,6 +64,7 @@ CallKernelThroughGate (
     return;
   }
 
+
   CallKernelThroughGateAsm (
     EntryPoint,
     LoaderParams,
