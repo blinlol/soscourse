@@ -99,5 +99,40 @@ find_function(const char *const fname) {
 
     // LAB 3: Your code here:
 
-    return 0;
+    struct {
+        const char *name;
+        uintptr_t addr;
+    } scentry[] = {
+        { "sys_yield", (uintptr_t)sys_yield },
+        { "sys_exit", (uintptr_t)sys_exit },
+    };
+
+    
+    for (size_t i = 0; i < sizeof(scentry)/sizeof(*scentry); i++) {
+        if (!strcmp(scentry[i].name, fname)) {
+            return scentry[i].addr;
+        }
+    }
+
+
+    struct Dwarf_Addrs addrs;
+    load_kernel_dwarf_info(&addrs);
+    uintptr_t offset = 0;   
+    
+    int status = address_by_fname(&addrs, fname, &offset);
+    if (status == 0){
+        return offset;
+    }
+    else if (status < 0){
+        cprintf("address_by_fname failed: %i\n", status);
+    }
+
+    status = naive_address_by_fname(&addrs, fname, &offset);
+    if (status == 0){
+        return offset;
+    }
+    else if (status < 0){
+        cprintf("naive_address_by_fname failed: %i\n", status);
+    }
+    return 0;       
 }
