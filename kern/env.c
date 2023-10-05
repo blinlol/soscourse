@@ -183,6 +183,7 @@ env_alloc(struct Env **newenv_store, envid_t parent_id, enum EnvType type) {
 static int
 bind_functions(struct Env *env, uint8_t *binary, size_t size, uintptr_t image_start, uintptr_t image_end) {
     // LAB 3: Your code here:
+    /* NOTE: find_function from kdebug.c should be used */
     uint8_t *symtable = NULL, *strtab = NULL;
     size_t entry_size = 0, table_size = 0;
     
@@ -191,40 +192,37 @@ bind_functions(struct Env *env, uint8_t *binary, size_t size, uintptr_t image_st
     size_t sh_num = e->e_shnum;
     size_t sh_ent_size = e->e_shentsize;
 
-    for(int i = 0; i < sh_num; i++) {
+    for (int i = 0; i < sh_num; i++) {
         struct Secthdr* sh = (struct Secthdr*) (sh_table + i*sh_ent_size);
 
-        if(sh->sh_type == ELF_SHT_SYMTAB) {
+        if (sh->sh_type == ELF_SHT_SYMTAB) {
             symtable = binary + sh->sh_offset;
             entry_size = sh->sh_entsize;
             table_size = sh->sh_size;
         }
 
-        if(sh->sh_type == ELF_SHT_STRTAB && !strtab) {
+        if (sh->sh_type == ELF_SHT_STRTAB && !strtab) {
             strtab = binary + sh->sh_offset;
         }
     }
 
-    if(symtable == NULL || strtab == NULL) {
-        return 0;   // no symtab
+    if (symtable == NULL || strtab == NULL) {
+        return 0;  
     }
     
-    for(size_t offset = 0; offset < table_size; offset += entry_size) {
-        struct Elf64_Sym* symb = (struct Elf64_Sym*) (symtable + offset);
-
-     
-            if(*(UINT64*)(symb->st_value) == 0) {
-                if(symb->st_name == 0) {
-                    continue;
-                }
-                const char* symname = (const char*) (strtab + symb->st_name);
-                
-                uintptr_t new_addr = find_function(symname);
-                if(new_addr) {
-                    *(UINT64*)symb->st_value = (UINT64)new_addr;
-                }   
+    for (size_t offset = 0; offset < table_size; offset += entry_size) {
+        struct Elf64_Sym* symb = (struct Elf64_Sym*) (symtable + offset);     
+        if (*(UINT64*)(symb->st_value) == 0) {
+            if (symb->st_name == 0) {
+                continue;
             }
-       
+            const char* symname = (const char*) (strtab + symb->st_name);
+                
+            uintptr_t new_addr = find_function(symname);
+            if (new_addr ) {
+                *(UINT64*)symb->st_value = (UINT64)new_addr;
+            }   
+        }
     }
     
     return 0;

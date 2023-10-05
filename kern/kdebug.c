@@ -102,15 +102,16 @@ find_function(const char *const fname) {
     struct {
         const char *name;
         uintptr_t addr;
-    } scentry[] = {
+    } syscall[] = {
         { "sys_yield", (uintptr_t)sys_yield },
         { "sys_exit", (uintptr_t)sys_exit },
+        { "cprintf", (uintptr_t)cprintf },
     };
 
     
-    for (size_t i = 0; i < sizeof(scentry)/sizeof(*scentry); i++) {
-        if (!strcmp(scentry[i].name, fname)) {
-            return scentry[i].addr;
+    for (size_t i = 0; i < sizeof(syscall)/sizeof(*syscall); i++) {
+        if (!strcmp(syscall[i].name, fname)) {
+            return syscall[i].addr;
         }
     }
 
