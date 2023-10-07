@@ -371,6 +371,11 @@ env_destroy(struct Env *env) {
      * it traps to the kernel. */
 
     // LAB 3: Your code here
+    env->env_status = ENV_DYING;
+    if (curenv == env){
+        env_free(env);
+        sched_yield();
+    }
 }
 
 #ifdef CONFIG_KSPACE

@@ -125,7 +125,7 @@ find_function(const char *const fname) {
         return offset;
     }
     else if (status < 0){
-        cprintf("address_by_fname failed: %i\n", status);
+        // cprintf("address_by_fname failed: %i\n", status);
     }
 
     status = naive_address_by_fname(&addrs, fname, &offset);
@@ -133,7 +133,7 @@ find_function(const char *const fname) {
         return offset;
     }
     else if (status < 0){
-        cprintf("naive_address_by_fname failed: %i\n", status);
+        // cprintf("naive_address_by_fname failed: %i\n", status);
     }
     return 0;       
 }

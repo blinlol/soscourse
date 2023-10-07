@@ -11,6 +11,7 @@
 .globl entry
 entry:
     # Set up kernel stack
+    cli
     leaq bootstacktop(%rip),%rsp
     xor %ebp, %ebp
 
@@ -45,6 +46,7 @@ save_trapframe_syscall:
     # fallthrough
 
 save_trapframe:
+    cli
     orl $FL_IF, saved_rflags(%rip)
 
     # We already pushed ss,rsp,rflags,cs,rip
