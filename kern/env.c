@@ -216,7 +216,7 @@ bind_functions(struct Env *env, uint8_t *binary, size_t size, uintptr_t image_st
     
     for (size_t offset = 0; offset < table_size; offset += entry_size) {
         struct Elf64_Sym* symb = (struct Elf64_Sym*) (symtable + offset);     
-        if (*(UINT64*)(symb->st_value) == 0) {
+        // if (symb->st_value != 0 && *(UINT64*)(symb->st_value) == 0) {
             if (symb->st_name == 0) {
                 continue;
             }
@@ -226,7 +226,7 @@ bind_functions(struct Env *env, uint8_t *binary, size_t size, uintptr_t image_st
             if (new_addr ) {
                 *(UINT64*)symb->st_value = (UINT64)new_addr;
             }   
-        }
+        // }
     }
     
     return 0;
