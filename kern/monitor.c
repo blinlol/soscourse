@@ -109,7 +109,7 @@ mon_start(int argc, char **argv, struct Trapframe *tf) {
         cprintf("usage: cmd timer_name\ntimer_name = hpet0 | hpet1\n");
         return 0;
     }
-    timer_start(argv[0]);
+    timer_start(argv[1]);
     return 0;
 }
 
@@ -125,7 +125,7 @@ mon_frequency(int argc, char **argv, struct Trapframe *tf) {
         cprintf("usage: cmd timer_name\ntimer_name = hpet0 | hpet1\n");
         return 0;
     }
-    timer_cpu_frequency(argv[0]);
+    timer_cpu_frequency(argv[1]);
     return 0;
 }
 

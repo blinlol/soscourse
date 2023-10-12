@@ -215,7 +215,7 @@ timer_start(const char *name) {
         }
     }
     print_timer_error();
-    cprintf("unknown timer name: %s\n", name);
+    // cprintf("unknown timer name: %s\n", name);
 }
 
 void
@@ -241,5 +241,5 @@ timer_cpu_frequency(const char *name) {
         }
     }
     print_timer_error();
-    cprintf("unknown timer name: %s\n", name);
+    // cprintf("unknown timer name: %s\n", name);
 }

@@ -309,6 +309,7 @@ load_icode(struct Env *env, uint8_t *binary, size_t size) {
                 cprintf("Invalid ELF file: ph->p_filesz <= ph->p_memsz\n");
                 return -E_INVALID_EXE;
             }
+            
             memcpy((void*)ph->p_va, (void*)(binary + ph->p_offset), ph->p_filesz);
             memset((void*)(ph->p_va + ph->p_filesz), 0, ph->p_memsz - ph->p_filesz);
         }
