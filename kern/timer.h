@@ -101,7 +101,7 @@ typedef struct {
     uint64_t rsv3[25];
     uint64_t MAIN_CNT;
     uint64_t rsv4;
-    uint64_t TIM0_CONF;
+    uint64_t TIM0_CONF; 
     uint64_t TIM0_COMP;
     uint64_t TIM0_FSB;
     uint64_t rsv5;

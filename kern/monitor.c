@@ -105,36 +105,47 @@ mon_author(int argc, char **argv, struct Trapframe *tf){
 
 int
 mon_start(int argc, char **argv, struct Trapframe *tf) {
+    if (argc != 2){
+        cprintf("usage: cmd timer_name\ntimer_name = hpet0 | hpet1\n");
+        return 0;
+    }
+    timer_start(argv[0]);
     return 0;
 }
 
 int
 mon_stop(int argc, char **argv, struct Trapframe *tf) {
+    timer_stop();
     return 0;
 }
 
 int
 mon_frequency(int argc, char **argv, struct Trapframe *tf) {
+    if (argc != 2){
+        cprintf("usage: cmd timer_name\ntimer_name = hpet0 | hpet1\n");
+        return 0;
+    }
+    timer_cpu_frequency(argv[0]);
     return 0;
 }
 
 /* Implement timer_start (mon_start), timer_stop (mon_stop), timer_freq (mon_frequency) commands. */
 // LAB 5: Your code here:
 
-int
-mon_start(int argc, char **argv, struct Trapframe *tf) {
-    return 0;
-}
+// int
+// mon_start(int argc, char **argv, struct Trapframe *tf) {
+//     return 0;
+// }
 
-int
-mon_stop(int argc, char **argv, struct Trapframe *tf) {
-    return 0;
-}
+// int
+// mon_stop(int argc, char **argv, struct Trapframe *tf) {
+//     return 0;
+// }
 
-int
-mon_frequency(int argc, char **argv, struct Trapframe *tf) {
-    return 0;
-}
+// int
+// mon_frequency(int argc, char **argv, struct Trapframe *tf) {
+//     return 0;
+// }
 
 // LAB 4: Your code here
 int

@@ -23,12 +23,16 @@ check_list(void) {
     asm volatile("sti");
 }
 
+struct spinlock memory_lock;
+
 /* malloc: general-purpose storage allocator */
 void *
 test_alloc(uint8_t nbytes) {
 
     /* Make allocator thread-safe with the help of spin_lock/spin_unlock. */
     // LAB 5: Your code here:
+
+    spin_lock(&memory_lock);
 
     size_t nunits = (nbytes + sizeof(Header) - 1) / sizeof(Header) + 1;
 
@@ -42,9 +46,9 @@ test_alloc(uint8_t nbytes) {
 
         freep = &base;
     }
-
+    
     check_list();
-
+    void* answer = NULL;
     for (Header *p = freep->next;; p = p->next) {
         /* big enough */
         if (p->size >= nunits) {
@@ -58,14 +62,22 @@ test_alloc(uint8_t nbytes) {
                 p += p->size;
                 p->size = nunits;
             }
-            return (void *)(p + 1);
+            answer = (void *)(p + 1);
+            goto exit;
+            // return (void *)(p + 1);
         }
 
         /* wrapped around free list */
         if (p == freep) {
-            return NULL;
+            answer = NULL;
+            goto exit;
+            // return NULL;
         }
     }
+
+    exit:
+    spin_unlock(&memory_lock);
+    return answer;
 }
 
 /* free: put block ap in free list */
@@ -77,6 +89,8 @@ test_free(void *ap) {
 
     /* Make allocator thread-safe with the help of spin_lock/spin_unlock. */
     // LAB 5: Your code here
+
+    spin_lock(&memory_lock);
 
     /* freed block at start or end of arena */
     Header *p = freep;
@@ -104,4 +118,5 @@ test_free(void *ap) {
     freep = p;
 
     check_list();
+    spin_unlock(&memory_lock);
 }

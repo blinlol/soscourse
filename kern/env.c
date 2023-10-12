@@ -303,7 +303,7 @@ load_icode(struct Env *env, uint8_t *binary, size_t size) {
     ProgramHeaders = (struct Proghdr*)(binary + ElfHeader->e_phoff);
     
     for (Index = 0; Index < ElfHeader->e_phnum; Index++){
-        ph = &ProgramHeaders[Index];
+        ph = ProgramHeaders + Index;
         if (ph->p_type == ELF_PROG_LOAD){
             if (ph->p_filesz > ph->p_memsz){
                 cprintf("Invalid ELF file: ph->p_filesz <= ph->p_memsz\n");
