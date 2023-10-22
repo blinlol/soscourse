@@ -15,6 +15,7 @@
 #include <kern/tsc.h>
 #include <kern/timer.h>
 #include <kern/env.h>
+#include <kern/pmap.h>
 #include <kern/trap.h>
 
 #define WHITESPACE "\t\r\n "
@@ -29,7 +30,7 @@ int mon_start(int argc, char **argv, struct Trapframe *tf);
 int mon_stop(int argc, char **argv, struct Trapframe *tf);
 int mon_frequency(int argc, char **argv, struct Trapframe *tf);
 int mon_author(int argc, char **argv, struct Trapframe *tf);
-
+int mon_memory(int argc, char **argv, struct Trapframe *tf);
 
 struct Command {
     const char *name;
@@ -47,6 +48,7 @@ static struct Command commands[] = {
         {"timer_stop", "Stop timer", mon_stop},
         {"timer_freq", "Get timer frequency", mon_frequency},
         {"author", "Print author of the OS", mon_author},
+        {"memory", "Display allocated memory pages", mon_memory},
 };
 #define NCOMMANDS (sizeof(commands) / sizeof(commands[0]))
 
@@ -129,23 +131,14 @@ mon_frequency(int argc, char **argv, struct Trapframe *tf) {
     return 0;
 }
 
-/* Implement timer_start (mon_start), timer_stop (mon_stop), timer_freq (mon_frequency) commands. */
-// LAB 5: Your code here:
 
-// int
-// mon_start(int argc, char **argv, struct Trapframe *tf) {
-//     return 0;
-// }
+// LAB 6: Your code here
+/* Implement memory (mon_memory) commands. */
+int
+mon_memory(int argc, char **argv, struct Trapframe *tf) {
+    return 0;
+}
 
-// int
-// mon_stop(int argc, char **argv, struct Trapframe *tf) {
-//     return 0;
-// }
-
-// int
-// mon_frequency(int argc, char **argv, struct Trapframe *tf) {
-//     return 0;
-// }
 
 // LAB 4: Your code here
 int
