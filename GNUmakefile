@@ -119,7 +119,7 @@ TAR	:= gtar
 PERL	:= perl
 
 # Try to infer the correct QEMU
-QEMU := /home/fedor/ispras-qemu/bin/qemu-system-x86_64
+# QEMU := /home/fedor/ispras-qemu/bin/qemu-system-x86_64
 ifndef QEMU
 QEMU := $(shell if PATH="$$ISP_PATH:$$PATH" which qemu-system-x86_64 > /dev/null 2>&1; \
 	then PATH="$$ISP_PATH:$$PATH" which qemu-system-x86_64; exit; \
