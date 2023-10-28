@@ -116,7 +116,7 @@ acpi_find_table(const char *sign) {
     for (int i = 0; i < count; i++){
         header_phys = rsdt->PointerToOtherSDT[i];
         header = (ACPISDTHeader*) mmio_map_region(header_phys, sizeof(ACPISDTHeader));
-        header = (ACPISDTHeader*)mmio_remap_last_region(header_phys, 
+        header = (ACPISDTHeader*) mmio_remap_last_region(header_phys, 
                                                         (void*)header, 
                                                         sizeof(ACPISDTHeader), 
                                                         header->Length);
