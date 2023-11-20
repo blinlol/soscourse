@@ -475,7 +475,7 @@ dump_memory_lists(void) {
     for (int class = 0; class < MAX_CLASS; class ++){
         struct List *l = &free_classes[class];
         cprintf("class %d\n", class);
-        for (struct List *cur = l; cur->next != l; cur = cur->next){
+        for (struct List *cur = l->next; cur->next != l; cur = cur->next){
             cprintf("%08lx\n", (uint64_t)(((struct Page*)cur)->addr << CLASS_BASE));
         }
         cprintf("\n");
