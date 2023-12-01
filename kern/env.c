@@ -8,14 +8,15 @@
 #include <inc/elf.h>
 
 #include <kern/env.h>
-#include <kern/pmap.h>
-#include <kern/trap.h>
-#include <kern/monitor.h>
-#include <kern/sched.h>
 #include <kern/kdebug.h>
 #include <kern/macro.h>
+#include <kern/monitor.h>
 #include <kern/pmap.h>
+#include <kern/pmap.h>
+#include <kern/sched.h>
+#include <kern/timer.h>
 #include <kern/traceopt.h>
+#include <kern/trap.h>
 
 /* Currently active environment */
 struct Env *curenv = NULL;
@@ -185,7 +186,7 @@ env_alloc(struct Env **newenv_store, envid_t parent_id, enum EnvType type) {
 #endif
 
     /* For now init trapframe with IF set */
-    env->env_tf.tf_rflags = FL_IF;
+    env->env_tf.tf_rflags = FL_IF | (type == ENV_TYPE_FS ? FL_IOPL_3 : FL_IOPL_0);
 
     /* Clear the page fault handler until user installs one. */
     env->env_pgfault_upcall = 0;
@@ -323,11 +324,6 @@ load_icode(struct Env *env, uint8_t *binary, size_t size) {
         return -E_INVALID_EXE;
     }
 
-#ifdef CONFIG_KSPACE
-    uintptr_t image_start = 0;
-    bool start_set = 0;
-    uintptr_t image_end = 0;
-#endif
     switch_address_space(&env->address_space);
     struct Proghdr *ph_array = (struct Proghdr *)(binary + elf->e_phoff);
     for (size_t i = 0; i < elf->e_phnum; i++) {
@@ -346,14 +342,6 @@ load_icode(struct Env *env, uint8_t *binary, size_t size) {
         if (src + ph->p_filesz > (void *)binary + size || src < (void *)binary)
             continue;
 
-#ifdef CONFIG_KSPACE
-        if (!start_set || (uintptr_t) dst < image_start) {
-            image_start = (uintptr_t) dst;
-            start_set = 1;
-        }
-        if (image_end < (uintptr_t)(dst + ph->p_memsz))
-            image_end = (uintptr_t)(dst + ph->p_memsz);
-#endif
         map_region(&env->address_space, ROUNDDOWN((uintptr_t) dst, PAGE_SIZE),
             NULL, 0, ROUNDUP((uintptr_t)ph->p_memsz, PAGE_SIZE), PROT_RWX | PROT_USER_ | ALLOC_ZERO);
 
@@ -368,9 +356,19 @@ load_icode(struct Env *env, uint8_t *binary, size_t size) {
 
     env->env_tf.tf_rip = elf->e_entry;
 
-#ifdef CONFIG_KSPACE
-    bind_functions(env, binary, size, image_start, image_end);
-#endif
+
+    // LAB 8: Your code here
+
+    /* NOTE: When merging origin/lab10 put this hunk at the end
+     *       of the function, when user stack is already mapped. */
+    if (env->env_type == ENV_TYPE_FS) {
+        /* If we are about to start filesystem server we need to pass
+         * information about PCIe MMIO region to it. */
+        struct AddressSpace *as = switch_address_space(&env->address_space);
+        env->env_tf.tf_rsp = make_fs_args((char *)env->env_tf.tf_rsp);
+        switch_address_space(as);
+    }
+
     return 0;
 }
 
@@ -395,6 +393,7 @@ env_create(uint8_t *binary, size_t size, enum EnvType type) {
 
     env->binary = binary;
     env->env_type = type;
+    // LAB 10: Your code here
 }
 
 
@@ -404,17 +403,6 @@ env_free(struct Env *env) {
 
     /* Note the environment's demise. */
     if (trace_envs) cprintf("[%08x] free env %08x\n", curenv ? curenv->env_id : 0, env->env_id);
-
-#ifndef CONFIG_KSPACE
-    /* If freeing the current environment, switch to kern_pgdir
-     * before freeing the page directory, just in case the page
-     * gets reused. */
-    if (&env->address_space == current_space)
-        switch_address_space(&kspace);
-
-    static_assert(MAX_USER_ADDRESS % HUGE_PAGE_SIZE == 0, "Misaligned MAX_USER_ADDRESS");
-    release_address_space(&env->address_space);
-#endif
 
     /* Return the environment to the free list */
     env->env_status = ENV_FREE;
@@ -440,6 +428,11 @@ env_destroy(struct Env *env) {
         sched_yield();
     // LAB 8: Your code here (set in_page_fault = 0)
     in_page_fault = 0;
+    // LAB 10: Your code here
+
+    /* Reset in_page_fault flags in case *current* environment
+     * is getting destroyed after performing invalid memory access. */
+    // LAB 8: Your code here
 }
 
 #ifdef CONFIG_KSPACE
