@@ -94,10 +94,16 @@ env_init(void) {
      * Don't forget about rounding.
      * kzalloc_region() only works with current_space != NULL */
     // LAB 8: Your code here
+    // if (current_space == NULL){
+    //     return;
+    // }
+    envs = kzalloc_region(ROUNDUP(NENV * sizeof(struct Env), PAGE_SIZE));
+    // memset(envs, 0, ROUNDUP(NENV * sizeof(struct Env), PAGE_SIZE));
 
     /* Map envs to UENVS read-only,
      * but user-accessible (with PROT_USER_ set) */
     // LAB 8: Your code here
+    map_region(current_space, UENVS, &kspace, (uintptr_t)envs, UENVS_SIZE, PROT_R | PROT_USER_);
 
     /* Set up envs array */
 
@@ -293,9 +299,9 @@ static int
 load_icode(struct Env *env, uint8_t *binary, size_t size) {
     // LAB 3: Your code here
     struct Elf *ElfHeader;
-    struct Proghdr *ProgramHeaders;
-    struct Proghdr *ph;
-    UINTN Index;
+    // struct Proghdr *ProgramHeaders;
+    // struct Proghdr *ph;
+    // UINTN Index;
 
     ElfHeader = (struct Elf*) binary;
 
@@ -316,25 +322,91 @@ load_icode(struct Env *env, uint8_t *binary, size_t size) {
         return -E_INVALID_EXE;
     }
 
-    ProgramHeaders = (struct Proghdr*)(binary + ElfHeader->e_phoff);
+
+    // switch_address_space(&env->address_space);
+
+    // ProgramHeaders = (struct Proghdr*)(binary + ElfHeader->e_phoff);
     
-    for (Index = 0; Index < ElfHeader->e_phnum; Index++){
-        ph = ProgramHeaders + Index;
-        if (ph->p_type == ELF_PROG_LOAD){
-            if (ph->p_filesz > ph->p_memsz){
-                cprintf("Invalid ELF file: ph->p_filesz <= ph->p_memsz\n");
-                return -E_INVALID_EXE;
-            }
+    // for (Index = 0; Index < ElfHeader->e_phnum; Index++){
+    //     ph = ProgramHeaders + Index;
+    //     if (ph->p_type == ELF_PROG_LOAD){
+    //         // void *src = binary + ph->p_offset;
+    //         // void *dst = (void *)(ph->p_va);
+
+    //         if (ph->p_filesz > ph->p_memsz){
+    //             cprintf("Invalid ELF file: ph->p_filesz <= ph->p_memsz\n");
+    //             return -E_INVALID_EXE;
+    //         }
             
-            memcpy((void*)ph->p_va, (void*)(binary + ph->p_offset), ph->p_filesz);
-            memset((void*)(ph->p_va + ph->p_filesz), 0, ph->p_memsz - ph->p_filesz);
+    //         map_region(&env->address_space, 
+    //                    ROUNDDOWN((uintptr_t)ph->p_va, PAGE_SIZE),
+    //                    NULL, 
+    //                    0, 
+    //                    ROUNDUP((uintptr_t)ph->p_memsz, PAGE_SIZE), 
+    //                    PROT_RWX | PROT_USER_ | ALLOC_ZERO);
+
+
+    //         memcpy((void*)ph->p_va, (void*)(binary + ph->p_offset), ph->p_filesz);
+    //         memset((void*)(ph->p_va + ph->p_filesz), 0, ph->p_memsz - ph->p_filesz);
+    //     }
+    // }
+
+    // env->env_tf.tf_rip = ElfHeader->e_entry;
+    
+    // map_region(&env->address_space, USER_STACK_TOP - USER_STACK_SIZE,
+    //     NULL, 0, USER_STACK_SIZE, PROT_R | PROT_W | PROT_USER_ | ALLOC_ZERO);
+
+    // switch_address_space(&env->address_space);
+
+
+
+
+
+
+
+
+    switch_address_space(&env->address_space);
+    struct Proghdr *ph_array = (struct Proghdr *)(binary + ElfHeader->e_phoff);
+    for (size_t i = 0; i < ElfHeader->e_phnum; i++) {
+        struct Proghdr *ph = ph_array + i;
+        if (ph->p_type != ELF_PROG_LOAD)
+            continue;
+
+        void *src = binary + ph->p_offset;
+        void *dst = (void *)(ph->p_va);
+
+        if (ph->p_filesz > ph->p_memsz) {
+            cprintf("Incorrect filesz of a section");
+            return -E_INVALID_EXE;
         }
+
+        if (src + ph->p_filesz > (void *)binary + size || src < (void *)binary)
+            continue;
+
+        map_region(&env->address_space, ROUNDDOWN((uintptr_t) dst, PAGE_SIZE),
+            NULL, 0, ROUNDUP((uintptr_t)ph->p_memsz, PAGE_SIZE), PROT_RWX | PROT_USER_ | ALLOC_ZERO);
+
+        memcpy(dst, src, ph->p_filesz);
+        memset(dst + ph->p_filesz, 0, ph->p_memsz - ph->p_filesz);
     }
 
+    map_region(&env->address_space, USER_STACK_TOP - USER_STACK_SIZE,
+        NULL, 0, USER_STACK_SIZE, PROT_R | PROT_W | PROT_USER_ | ALLOC_ZERO);
+
+    switch_address_space(&env->address_space);
+
     env->env_tf.tf_rip = ElfHeader->e_entry;
-    
-    bind_functions(env, binary, size, ElfHeader->e_entry, ElfHeader->e_entry + size);
-    // LAB 8: Your code here
+
+
+
+
+
+
+
+
+    // bind_functions(env, binary, size, ElfHeader->e_entry, ElfHeader->e_entry + size);
+    // // LAB 8: Your code here
+
     return 0;
 }
 
@@ -362,6 +434,7 @@ env_create(uint8_t *binary, size_t size, enum EnvType type) {
         return ;
     }
     // LAB 8: Your code here
+    new_env->binary = binary;
 }
 
 
@@ -410,6 +483,7 @@ env_destroy(struct Env *env) {
     /* Reset in_page_fault flags in case *current* environment
      * is getting destroyed after performing invalid memory access. */
     // LAB 8: Your code here
+    in_page_fault = false;
 }
 
 #ifdef CONFIG_KSPACE
@@ -499,8 +573,10 @@ env_run(struct Env *env) {
     curenv = env;
     curenv->env_status = ENV_RUNNING;
     curenv->env_runs++;
-    // LAB 8: Your code here
 
+    // LAB 8: Your code here
+    switch_address_space(&curenv->address_space);
+    
     env_pop_tf(&curenv->env_tf);
     while (1)
         ;

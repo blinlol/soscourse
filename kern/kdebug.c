@@ -54,6 +54,19 @@ load_user_dwarf_info(struct Dwarf_Addrs *addrs) {
     /* Load debug sections from curenv->binary elf image */
     // LAB 8: Your code here
     (void)sections;
+    
+    struct Elf *elf = (struct Elf *)binary;
+    struct Secthdr *sh = (struct Secthdr *)(binary + elf->e_shoff);
+    char *shstr = (char *)binary + sh[elf->e_shstrndx].sh_offset;
+    for (size_t i = 0; i < elf->e_shnum; i++) {
+        for (size_t j = 0; j < sizeof(sections) / sizeof(*sections); j++) {
+            struct Secthdr *sh_cur = sh + i;
+            if (!strcmp(shstr + sh_cur->sh_name, sections[j].name)) {
+                *sections[j].start = binary + sh_cur->sh_offset;
+                *sections[j].end = binary + sh_cur->sh_offset + sh_cur->sh_size;
+            }
+        }
+    }
 }
 
 #define UNKNOWN       "<unknown>"
@@ -83,6 +96,10 @@ debuginfo_rip(uintptr_t addr, struct Ripdebuginfo *info) {
 
     // LAB 8: Your code here:
 
+    uintptr_t old_cr3 = curenv->address_space.cr3;
+    if (old_cr3 != kspace.cr3)
+        lcr3(kspace.cr3);
+
     /* Load dwarf section pointers from either
      * currently running program binary or use
      * kernel debug info provided by bootloader
@@ -92,7 +109,13 @@ debuginfo_rip(uintptr_t addr, struct Ripdebuginfo *info) {
     // LAB 8: Your code here:
 
     struct Dwarf_Addrs addrs;
-    load_kernel_dwarf_info(&addrs);
+    if (addr < MAX_USER_READABLE) {
+        load_user_dwarf_info(&addrs);
+    } 
+    else {
+        load_kernel_dwarf_info(&addrs);
+    }
+    // load_kernel_dwarf_info(&addrs);
 
     Dwarf_Off offset = 0, line_offset = 0;
     int res = info_by_address(&addrs, addr, &offset);
@@ -131,6 +154,10 @@ error:
     return res;
 }
 
+// void sys_yield(void);
+// void sys_exit(void);
+
+
 uintptr_t
 find_function(const char *const fname) {
     /* There are two functions for function name lookup.
@@ -141,22 +168,33 @@ find_function(const char *const fname) {
 
     // LAB 3: Your code here:
 
-    struct {
-        const char *name;
-        uintptr_t addr;
-    } syscall[] = {
-        { "sys_yield", (uintptr_t)sys_yield },
-        { "sys_exit", (uintptr_t)sys_exit },
-        { "cprintf", (uintptr_t)cprintf },
-    };
+    // struct {
+    //     const char *name;
+    //     uintptr_t addr;
+    // } syscall[] = {
+    //     { "sys_yield", (uintptr_t)sys_yield },
+    //     { "sys_exit", (uintptr_t)sys_exit },
+    //     { "cprintf", (uintptr_t)cprintf },
+    // };
 
     
-    for (size_t i = 0; i < sizeof(syscall)/sizeof(*syscall); i++) {
-        if (!strcmp(syscall[i].name, fname)) {
-            return syscall[i].addr;
+    // for (size_t i = 0; i < sizeof(syscall)/sizeof(*syscall); i++) {
+    //     if (!strcmp(syscall[i].name, fname)) {
+    //         return syscall[i].addr;
+    //     }
+    // }
+
+
+    LOADER_PARAMS *lp = (LOADER_PARAMS *)uefi_lp;
+    struct Elf64_Sym *symtab = (struct Elf64_Sym *)lp->SymbolTableStart;
+    struct Elf64_Sym *symtab_end = (struct Elf64_Sym *)lp->SymbolTableEnd;
+    char *strtab = (char *)lp->StringTableStart;
+
+    for (struct Elf64_Sym *iter = symtab; iter < symtab_end; iter++) {
+        if (!strcmp(&strtab[iter->st_name], fname)) {
+            return (uintptr_t)iter->st_value;
         }
     }
-
 
     struct Dwarf_Addrs addrs;
     load_kernel_dwarf_info(&addrs);
