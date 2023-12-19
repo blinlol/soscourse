@@ -278,6 +278,24 @@ sys_map_physical_region(uintptr_t pa, envid_t envid, uintptr_t va, size_t size, 
     // LAB 10: Your code here
     // TIP: Use map_physical_region() with (perm | PROT_USER_ | MAP_USER_MMIO)
     //      And don't forget to validate arguments as always.
+    struct Env* env;
+    if (envid2env(envid, &env, 1))
+        return -E_BAD_ENV;
+    if (env->type != ENV_TYPE_FS)
+        return -E_BAD_ENV;
+    if (CLASS_MASK(0) & va || va >= MAX_USER_ADDRESS)
+        return -E_INVAL;
+    if (CLASS_MASK(0) & pa)
+        return -E_INVAL;
+    // size page aligned
+    if (size & ~PAGE_SIZE)
+        return -E_INVAL;
+    if (prem & PROT_SHARE || prem & PROT_COMBINE || prem & PROT_LAZY)
+        return -E_INVAL;
+
+    map_physical_region(&env->address_space, va, pa, size, (perm | PROT_USER_ | MAP_USER_MMIO));
+    //  -E_NO_MEM if address does not exist.
+    // -E_NO_ENT if address is already used.
     return 0;
 }
 
@@ -386,8 +404,14 @@ sys_ipc_recv(uintptr_t dstva, uintptr_t maxsize) {
 static int
 sys_region_refs(uintptr_t addr, size_t size, uintptr_t addr2, uintptr_t size2) {
     // LAB 10: Your code here
-
-    return 0;
+    if (addr2 < MAX_USER_ADDRESS) {
+        int maxref1 = region_maxref(&curenv->address_space, addr, size);
+        int maxref2 = region_maxref(&curenv->address_space, addr2, size2);
+        return maxref1 - maxref2;
+    } 
+    else {
+        return region_maxref(&curenv->address_space, addr, size);
+    }
 }
 
 /* Dispatches to the correct kernel function, passing the arguments. */
@@ -410,7 +434,7 @@ syscall(uintptr_t syscallno, uintptr_t a1, uintptr_t a2, uintptr_t a3, uintptr_t
     // LAB 9: Your code here
     case SYS_exofork:
         return sys_exofork();
-    case SYS_alloc_region:
+    case SYS_alloc_regsys_map_physical_regionion:
         return sys_alloc_region((envid_t)a1, a2, (size_t)a3, (int)a4);
     case SYS_map_region:
         return sys_map_region((envid_t) a1, a2,(envid_t)a3, a4, (size_t)a5, (int)a6);
@@ -427,6 +451,10 @@ syscall(uintptr_t syscallno, uintptr_t a1, uintptr_t a2, uintptr_t a3, uintptr_t
         return sys_ipc_try_send((envid_t)a1, (uint32_t)a2, a3,(size_t)a4,(int)a5);
     case SYS_ipc_recv:
         return sys_ipc_recv(a1, a2);
+    case SYS_region_refs:
+        return sys_region_refs(a1, (size_t) a2, a3, a4);
+    case SYS_map_physical_region:
+        return sys_map_physical_region(a1, (envid_t)a2, a3, (size_t)a4, a5); // ???
     }
     // LAB 10: Your code here
 

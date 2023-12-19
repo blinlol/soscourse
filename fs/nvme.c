@@ -17,11 +17,15 @@ nvme_map(struct NvmeController *ctl) {
     ctl->mmio_base_addr = (volatile uint8_t *)NVME_VADDR;
 
     /* Map BAR0 register to ctl->mmio_base_addr as readable, writable
-     * and non-cacheable memory. (Map at most NVME_MAX_MAP_MEM bytes here.)
+     * and non-cacheable memory. (Map at most NVME_MAX_AP_MEM bytes here.)
      * TIP: Functions get_bar_address(), get_bar_size()
      *      and sys_map_physical_region() might be useful here */
     // LAB 10: Your code here
-
+    
+    uintptr_t nvme_pa = get_bar_address(ctl->pcidev, 0)
+    uint32_t size = get_bar_size(ctl->pcidev, 0);
+    // sys_map_physical_region(ctl->mmio_base_addr, )      ?????
+    
 
     DEBUG("NVMe MMIO base = %p, size = %x, pa = %lx", ctl->mmio_base_addr, memsize, nvme_pa);
 
