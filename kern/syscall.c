@@ -23,8 +23,18 @@ sys_cputs(const char *s, size_t len) {
 
     /* Check that the user has permission to read memory [s, s+len).
      * Destroy the environment if not. */
+    
     user_mem_assert(curenv, s, len, PROT_R | PROT_USER_);
+    #ifdef SANITIZE_SHADOW_BASE
+        platform_asan_unpoison((void*)s, len);
+    #endif
     cprintf("%.*s", (int)len, s);
+    // for (int i = 0; i < len; i++){
+    //     cputchar(*(s + i));
+    // }
+    #ifdef SANITIZE_SHADOW_BASE
+        platform_asan_poison((void*)s, len);
+    #endif
     return 0;
 }
 
@@ -53,10 +63,14 @@ static int
 sys_env_destroy(envid_t envid) {
     // LAB 8: Your code here.
     
+    cprintf("env_destroy: %d\n", envid);
+
     struct Env *env;
     if (envid2env(envid, &env, 1)){
         return -E_BAD_ENV;
     }
+
+    cprintf("MARAT's ASS\n");
     
 #if 1 /* TIP: Use this snippet to log required for passing grade tests info */
     if (trace_envs) {
