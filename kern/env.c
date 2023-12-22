@@ -407,8 +407,13 @@ env_create(uint8_t *binary, size_t size, enum EnvType type) {
         panic("Could not load executable : %i", status);
 
     env->binary = binary;
-    env->env_type = type;
+    // env->env_type = type;
     // LAB 10: Your code here
+    env->env_tf.tf_rflags &= ~FL_IOPL_MASK;
+    if (type == ENV_TYPE_FS)
+        env->env_tf.tf_rflags |= FL_IOPL_3;
+    else
+        env->env_tf.tf_rflags |= FL_IOPL_0;
 }
 
 
@@ -455,6 +460,19 @@ env_destroy(struct Env *env) {
     // LAB 8: Your code here (set in_page_fault = 0)
     in_page_fault = 0;
     // LAB 10: Your code here
+
+
+    // Misha
+    // if (env == curenv) {
+    //     env_free(env);
+    //     in_page_fault = false;
+    //     sched_yield();
+    // } else if (env->env_status == ENV_RUNNING) {
+    //     env->env_status = ENV_DYING;
+    //     return;
+    // }
+    // env_free(env);
+
 
     /* Reset in_page_fault flags in case *current* environment
      * is getting destroyed after performing invalid memory access. */

@@ -292,7 +292,20 @@ sys_map_physical_region(uintptr_t pa, envid_t envid, uintptr_t va, size_t size, 
     // LAB 10: Your code here
     // TIP: Use map_physical_region() with (perm | PROT_USER_ | MAP_USER_MMIO)
     //      And don't forget to validate arguments as always.
-    return 0;
+    if (va >= MAX_USER_ADDRESS || PAGE_OFFSET(va) || PAGE_OFFSET(pa) || PAGE_OFFSET(size) ||
+        size > MAX_USER_ADDRESS || MAX_USER_ADDRESS - va < size || perm & (PROT_SHARE | PROT_COMBINE | PROT_LAZY))
+        return -E_INVAL;
+
+    struct Env * fs;
+    int res = envid2env(envid, &fs, true);
+    if (res)
+        return res;
+    if (fs->env_type != ENV_TYPE_FS)
+        return -E_BAD_ENV;
+
+    res = map_physical_region(&fs->address_space, va, pa, size, perm | PROT_USER_ | MAP_USER_MMIO);
+
+    return res;
 }
 
 /* Try to send 'value' to the target env 'envid'.
@@ -338,6 +351,11 @@ sys_map_physical_region(uintptr_t pa, envid_t envid, uintptr_t va, size_t size, 
 static int
 sys_ipc_try_send(envid_t envid, uint32_t value, uintptr_t srcva, size_t size, int perm) {
     // LAB 9: Your code here
+
+
+
+// pernel
+
     struct Env* env;
     if (envid2env(envid, &env, 0))
         return -E_BAD_ENV;
@@ -346,8 +364,11 @@ sys_ipc_try_send(envid_t envid, uint32_t value, uintptr_t srcva, size_t size, in
         return -E_IPC_NOT_RECV;
 
     if (srcva < MAX_USER_ADDRESS && env->env_ipc_dstva < MAX_USER_ADDRESS) {
-        if (PAGE_OFFSET(srcva) || PAGE_OFFSET(env->env_ipc_dstva) || 
-            perm & ~PROT_ALL || (perm & ~(PTE_AVAIL | PTE_W)) != (PTE_U | PTE_P))
+        if (PAGE_OFFSET(srcva))
+            return -E_INVAL;
+        if (PAGE_OFFSET(env->env_ipc_dstva))
+            return -E_INVAL;
+        if (perm & ~PROT_ALL)
             return -E_INVAL;
 
         if (map_region(&env->address_space, env->env_ipc_dstva, 
@@ -364,6 +385,47 @@ sys_ipc_try_send(envid_t envid, uint32_t value, uintptr_t srcva, size_t size, in
     env->env_ipc_recving = 0;
     env->env_status = ENV_RUNNABLE;
     return 0;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    // struct Env* env;
+    // if (envid2env(envid, &env, 0))
+    //     return -E_BAD_ENV;
+
+    // if (!env->env_ipc_recving)
+    //     return -E_IPC_NOT_RECV;
+
+    // if (srcva < MAX_USER_ADDRESS && env->env_ipc_dstva < MAX_USER_ADDRESS) {
+    //     if (PAGE_OFFSET(srcva) || PAGE_OFFSET(env->env_ipc_dstva) || 
+    //         perm & ~PROT_ALL || (perm & ~(PTE_AVAIL | PTE_W)) != (PTE_U | PTE_P))
+    //         return -E_INVAL;
+
+    //     if (map_region(&env->address_space, env->env_ipc_dstva, 
+    //         &curenv->address_space, srcva, PAGE_SIZE, perm | PROT_USER_))
+    //         return -E_NO_MEM;
+
+    //     env->env_ipc_maxsz = MIN(size, env->env_ipc_maxsz);
+    //     env->env_ipc_perm = perm;
+    // } else 
+    //     env->env_ipc_perm = 0;
+
+    // env->env_ipc_value = value;
+    // env->env_ipc_from = curenv->env_id;
+    // env->env_ipc_recving = 0;
+    // env->env_status = ENV_RUNNABLE;
+    // return 0;
 }
 
 /* Block until a value is ready.  Record that you want to receive
@@ -400,8 +462,11 @@ sys_ipc_recv(uintptr_t dstva, uintptr_t maxsize) {
 static int
 sys_region_refs(uintptr_t addr, size_t size, uintptr_t addr2, uintptr_t size2) {
     // LAB 10: Your code here
+    if (addr2 == MAX_USER_ADDRESS)
+        return region_maxref(current_space, addr, size);
+    else
+        return region_maxref(current_space, addr, size) - region_maxref(current_space, addr2, size2);
 
-    return 0;
 }
 
 /* Dispatches to the correct kernel function, passing the arguments. */
@@ -442,6 +507,10 @@ syscall(uintptr_t syscallno, uintptr_t a1, uintptr_t a2, uintptr_t a3, uintptr_t
     case SYS_ipc_recv:
         return sys_ipc_recv(a1, a2);
     // LAB 10: Your code here
+    case SYS_region_refs:
+        return sys_region_refs(a1, (size_t)a2, a3, (size_t)a4);
+    case SYS_map_physical_region:
+        return sys_map_physical_region(a1, a2, a3, a4, a5);
     }
 
     return -E_NO_SYS;

@@ -75,6 +75,19 @@ acpi_enable(void) {
         ;
 }
 
+
+static bool
+check_sum(int8_t *data, size_t len) {
+    return 0 == 0;
+
+    // int8_t sum = 0;
+    // for (int8_t *end = data + len; data < end; data++) {
+    //     sum += *data;
+    // }
+    // return sum == 0;
+}
+
+
 static void *
 acpi_find_table(const char *sign) {
     /*
@@ -90,45 +103,86 @@ acpi_find_table(const char *sign) {
      * HINT: You may want to distunguish RSDT/XSDT
      */
     // LAB 5: Your code here:
-    RSDP* rsdp = (RSDP*) mmio_map_region(uefi_lp->ACPIRoot, sizeof(RSDP));
-    if (strncmp(rsdp->Signature, "RSD PTR ", 8) != 0){
-        panic("wrong rsdp signature\n");
-    }
-    bool revision = rsdp->Revision;
+    // RSDP* rsdp = (RSDP*) mmio_map_region(uefi_lp->ACPIRoot, sizeof(RSDP));
+    // if (strncmp(rsdp->Signature, "RSD PTR ", 8) != 0){
+    //     panic("wrong rsdp signature\n");
+    // }
+    // bool revision = rsdp->Revision;
 
-    RSDT* rsdt;
-    physaddr_t rsdt_phys;
-    if (revision){
-        rsdt_phys = rsdp->XsdtAddress;
-    }
-    else{
-        rsdt_phys = rsdp->RsdtAddress;
-    }
+    // RSDT* rsdt;
+    // physaddr_t rsdt_phys;
+    // if (revision){
+    //     rsdt_phys = rsdp->XsdtAddress;
+    // }
+    // else{
+    //     rsdt_phys = rsdp->RsdtAddress;
+    // }
     
-    rsdt = (RSDT*)mmio_map_region(rsdt_phys, sizeof(RSDT));
-    rsdt = (RSDT*)mmio_remap_last_region(rsdt_phys, (void*)rsdt, sizeof(RSDT), rsdt->h.Length);
+    // rsdt = (RSDT*)mmio_map_region(rsdt_phys, sizeof(RSDT));
+    // rsdt = (RSDT*)mmio_remap_last_region(rsdt_phys, (void*)rsdt, sizeof(RSDT), rsdt->h.Length);
 
-    uint64_t count = (rsdt->h.Length - sizeof(rsdt->h)) / 4;
-    if (revision){
-        count = count / 2;
-    }
+    // uint64_t count = (rsdt->h.Length - sizeof(rsdt->h)) / 4;
+    // if (revision){
+    //     count = count / 2;
+    // }
 
-    physaddr_t header_phys;
-    ACPISDTHeader *header;
-    for (int i = 0; i < count; i++){
-        header_phys = rsdt->PointerToOtherSDT[i];
-        header = (ACPISDTHeader*) mmio_map_region(header_phys, sizeof(ACPISDTHeader));
-        header = (ACPISDTHeader*) mmio_remap_last_region(header_phys, 
-                                                        (void*)header, 
-                                                        sizeof(ACPISDTHeader), 
-                                                        header->Length);
-        if (strncmp(header->Signature, sign, 4) == 0){
-            return header;
+    // physaddr_t header_phys;
+    // ACPISDTHeader *header;
+    // for (int i = 0; i < count; i++){
+    //     header_phys = rsdt->PointerToOtherSDT[i];
+    //     header = (ACPISDTHeader*) mmio_map_region(header_phys, sizeof(ACPISDTHeader));
+    //     header = (ACPISDTHeader*) mmio_remap_last_region(header_phys, 
+    //                                                     (void*)header, 
+    //                                                     sizeof(ACPISDTHeader), 
+    //                                                     header->Length);
+    //     if (strncmp(header->Signature, sign, 4) == 0){
+    //         return header;
+    //     }
+
+    // }
+
+    // return NULL;
+
+
+
+
+
+    // PAUL
+    RSDP *rsdp = (void *) uefi_lp->ACPIRoot;
+    rsdp = mmio_map_region((uintptr_t) rsdp, sizeof *rsdp);
+    assert(strncmp(rsdp->Signature, "RSD PTR ", 8) == 0 &&
+        check_sum((void *) rsdp, 20) && check_sum((void *) rsdp, rsdp->Length) &&
+        rsdp->Revision == 2);
+
+    ACPISDTHeader *xsdt_phys;
+    if ((xsdt_phys = (void *) rsdp->XsdtAddress)) {
+        ACPISDTHeader *xsdt = mmio_map_region((uintptr_t) xsdt_phys, sizeof *xsdt_phys);
+        assert(strncmp(xsdt->Signature, "XSDT", 4) == 0 &&
+            check_sum((void *) xsdt, xsdt->Length));
+
+        if (xsdt->Length > PAGE_SIZE) {
+            xsdt = mmio_remap_last_region((uintptr_t) xsdt_phys, xsdt, sizeof *xsdt_phys, xsdt->Length);
+        }
+
+        for (ACPISDTHeader **entry = (void *) &xsdt[1], **end = (void *) xsdt + xsdt->Length; 
+             entry < end;
+             entry++) {
+            ACPISDTHeader *table =  mmio_map_region((uintptr_t) *entry, sizeof **entry);
+            if (strncmp(table->Signature, sign, 4) == 0) {
+                if (table->Length > PAGE_SIZE) {
+                    table = mmio_remap_last_region((uintptr_t) *entry, table, sizeof *table, table->Length);
+                }
+                return table;
+            }
         }
 
     }
 
+    cprintf("ERROR: XSDT is not present or the required signature (%s) was not found\n", sign);
     return NULL;
+
+
+
 }
 
 MCFG *

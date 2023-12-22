@@ -63,8 +63,10 @@ ipc_send(envid_t to_env, uint32_t val, void *pg, size_t size, int perm) {
 
     int errno;
     while ((errno = sys_ipc_try_send(to_env, val, pg, size, perm))) {
-        if (errno != -E_IPC_NOT_RECV)
-            panic("Ipc send error. Errno: %i\n", errno);
+        if (errno != -E_IPC_NOT_RECV){
+            // printf("ipc_send: %d %u %p %lu %d\n", to_env, val, pg, size, perm);
+            panic("Ipc send error. Errno: %i\nipc_send: %d %u %p %lu %d\n", errno,  to_env, val, pg, size, perm);
+        }
         sys_yield();
     }
 }
