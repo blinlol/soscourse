@@ -61,7 +61,30 @@ alloc_block(void) {
 
     // LAB 10: Your code here
 
-    return 0;
+    blockno_t blockno = 0;
+    for (int i = 1; i < MIN(64, super->s_nblocks); i++) // unaligned (because of zero block)
+        if (block_is_free(i)) {
+            blockno = i;
+            break;
+        }
+
+    if (blockno == 0) {
+        int first_nonzero_64bit = 1; // oooooooooptimization
+        for (; first_nonzero_64bit < super->s_nblocks / 64; first_nonzero_64bit++)
+            if (((uint64_t *)bitmap)[first_nonzero_64bit] != 0)
+                break;
+        for (uint64_t i = first_nonzero_64bit * 64; i < super->s_nblocks; i++)
+            if (block_is_free(i)) {
+                blockno = i;
+                break;
+            }
+    }
+    if (blockno != 0) {
+        CLRBIT(bitmap, blockno);
+        flush_block(bitmap + blockno / 32);
+    }
+
+    return blockno;
 }
 
 /* Validate the file system bitmap.
@@ -125,7 +148,21 @@ file_block_walk(struct File *f, blockno_t filebno, blockno_t **ppdiskbno, bool a
     // LAB 10: Your code here
 
     *ppdiskbno = NULL;
-
+    if (filebno >= NDIRECT + NINDIRECT)
+        return -E_INVAL;
+    if (filebno < NDIRECT)
+        *ppdiskbno = f->f_direct + filebno;
+    else {
+        if (!f->f_indirect) {
+            if (!alloc)
+                return -E_NOT_FOUND;
+            if (!(f->f_indirect = alloc_block()))
+                return -E_NO_DISK;
+            memset(diskaddr(f->f_indirect), 0, BLKSIZE);
+        }
+        *ppdiskbno = (blockno_t *)diskaddr(f->f_indirect) + filebno - NDIRECT;
+    }
+    return 0;
     return 0;
 }
 
@@ -142,6 +179,15 @@ file_get_block(struct File *f, blockno_t filebno, char **blk) {
     // LAB 10: Your code here
 
     *blk = NULL;
+    blockno_t * block = NULL;
+    int res = file_block_walk(f, filebno, &block, true);
+    if (res)
+        return res;
+
+    if (!*block && !(*block = alloc_block()))
+        return -E_NO_DISK;
+
+    *blk = (char *)diskaddr(*block);
 
     return 0;
 }
