@@ -70,7 +70,6 @@ sys_env_destroy(envid_t envid) {
         return -E_BAD_ENV;
     }
 
-    cprintf("MARAT's ASS\n");
     
 #if 1 /* TIP: Use this snippet to log required for passing grade tests info */
     if (trace_envs) {
@@ -473,6 +472,20 @@ static int
 sys_env_set_trapframe(envid_t envid, struct Trapframe *tf) {
     // LAB 11: Your code here
 
+    struct Env* env;
+    if (envid2env(envid, &env, 0))
+        return -E_BAD_ENV;
+
+    user_mem_assert(curenv, tf, sizeof(*tf), PROT_R | PROT_USER_);
+
+    nosan_memcpy(&env->env_tf, tf, sizeof(*tf));
+    env->env_tf.tf_ds = GD_UD | 3;
+    env->env_tf.tf_es = GD_UD | 3;
+    env->env_tf.tf_ss = GD_UD | 3;
+    env->env_tf.tf_cs = GD_UT | 3;
+    env->env_tf.tf_rflags &= 0xFFF;
+    env->env_tf.tf_rflags |= FL_IF;
+
     return 0;
 }
 
@@ -536,8 +549,10 @@ syscall(uintptr_t syscallno, uintptr_t a1, uintptr_t a2, uintptr_t a3, uintptr_t
         return sys_region_refs(a1, (size_t)a2, a3, (size_t)a4);
     case SYS_map_physical_region:
         return sys_map_physical_region(a1, a2, a3, a4, a5);
-    }
     // LAB 11: Your code here
+    case SYS_env_set_trapframe:
+        return sys_env_set_trapframe((envid_t)a1, (struct Trapframe *)a2);
+    }
 
     return -E_NO_SYS;
 }
