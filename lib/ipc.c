@@ -21,8 +21,6 @@
  *   a perfectly valid place to map a page.) */
 int32_t
 ipc_recv(envid_t *from_env_store, void *pg, size_t *size, int *perm_store) {
-    // LAB 9: Your code here:
-
     if (!pg)
         pg = (void *)MAX_USER_ADDRESS;
 
@@ -44,6 +42,7 @@ ipc_recv(envid_t *from_env_store, void *pg, size_t *size, int *perm_store) {
 
         return thisenv->env_ipc_value;
     }
+    return -1;
 }
 
 /* Send 'val' (and 'pg' with 'perm', if 'pg' is nonnull) to 'toenv'.
@@ -56,17 +55,13 @@ ipc_recv(envid_t *from_env_store, void *pg, size_t *size, int *perm_store) {
  *   as meaning "no page".  (Zero is not the right value.) */
 void
 ipc_send(envid_t to_env, uint32_t val, void *pg, size_t size, int perm) {
-    // LAB 9: Your code here:
-    if (!pg){
+    if (!pg)
         pg = (void *)MAX_USER_ADDRESS;
-    }
 
     int errno;
     while ((errno = sys_ipc_try_send(to_env, val, pg, size, perm))) {
-        if (errno != -E_IPC_NOT_RECV){
-            // printf("ipc_send: %d %u %p %lu %d\n", to_env, val, pg, size, perm);
-            panic("Ipc send error. Errno: %i\nipc_send: %d %u %p %lu %d\n", errno,  to_env, val, pg, size, perm);
-        }
+        if (errno != -E_IPC_NOT_RECV)
+            panic("Ipc send error. Errno: %i\n", errno);
         sys_yield();
     }
 }

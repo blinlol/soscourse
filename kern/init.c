@@ -157,14 +157,16 @@ i386_init(void) {
     /* Choose the timer used for scheduling: hpet or pit */
     timers_schedule("hpet0");
 
+    //assert(false);
+
 #ifdef CONFIG_KSPACE
     /* Touch all you want */
-    // ENV_CREATE_KERNEL_TYPE(prog_test1);
-    // ENV_CREATE_KERNEL_TYPE(prog_test2);
-    // ENV_CREATE_KERNEL_TYPE(prog_test3);
-    // ENV_CREATE_KERNEL_TYPE(prog_test4);
-    // ENV_CREATE_KERNEL_TYPE(prog_test5);
-    // ENV_CREATE_KERNEL_TYPE(prog_test6);
+    ENV_CREATE_KERNEL_TYPE(prog_test1);
+    ENV_CREATE_KERNEL_TYPE(prog_test2);
+    ENV_CREATE_KERNEL_TYPE(prog_test3);
+    ENV_CREATE_KERNEL_TYPE(prog_test4);
+    ENV_CREATE_KERNEL_TYPE(prog_test5);
+    ENV_CREATE_KERNEL_TYPE(prog_test6);
 #else
 
 #if LAB >= 10
@@ -176,7 +178,6 @@ i386_init(void) {
     ENV_CREATE(TEST, ENV_TYPE_USER);
 #else
     /* Touch all you want. */
-
     ENV_CREATE(user_icode, ENV_TYPE_USER);
 #endif /* TEST* */
 #endif

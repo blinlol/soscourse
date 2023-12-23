@@ -77,11 +77,9 @@ _alltraps:
   call trap
   jmp .
 
-# LAB 8: Your code here
 # Use TRAPHANDLER or TRAPHANDLER_NOEC to setup
 # all trap handlers' entry points
 # (Look up their list in inc/trap.h)
-
 TRAPHANDLER_NOEC(divide_thdlr, T_DIVIDE)
 TRAPHANDLER_NOEC(debug_thdlr, T_DEBUG)
 TRAPHANDLER_NOEC(nmi_thdlr, T_NMI)
@@ -101,10 +99,8 @@ TRAPHANDLER(align_thdlr, T_ALIGN)
 TRAPHANDLER_NOEC(mchk_thdlr, T_MCHK)
 TRAPHANDLER_NOEC(simderr_thdlr, T_SIMDERR)
 TRAPHANDLER_NOEC(syscall_thdlr, T_SYSCALL)
-
 TRAPHANDLER_NOEC(clock_thdlr, IRQ_OFFSET + IRQ_CLOCK)
 TRAPHANDLER_NOEC(timer_thdlr, IRQ_OFFSET + IRQ_TIMER)
-
 TRAPHANDLER_NOEC(kbd_thdlr, IRQ_OFFSET + IRQ_KBD)
 TRAPHANDLER_NOEC(serial_thdlr, IRQ_OFFSET + IRQ_SERIAL)
 

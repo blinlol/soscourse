@@ -276,9 +276,10 @@ map_segment(envid_t child, uintptr_t va, size_t memsz,
         fileoffset -= res;
     }
 
-    // LAB 11: Your code here
     /* NOTE: There's restriction on maximal filesz
      * for each program segment (HUGE_PAGE_SIZE) */
+    if (filesz > HUGE_PAGE_SIZE || filesz > memsz)
+        return -E_INVALID_EXE;
 
     /* Allocate filesz - memsz in child */
     /* Allocate filesz in parent to UTEMP */
@@ -286,24 +287,27 @@ map_segment(envid_t child, uintptr_t va, size_t memsz,
     /* read filesz to UTEMP */
     /* Map read section conents to child */
     /* Unmap it from parent */
-
-    if (memsz > filesz && 
-        (res = sys_alloc_region(child, (void *)ROUNDUP(va + filesz, 4096), memsz, perm)))
+    res = sys_alloc_region(child, (void *)ROUNDUP(va + filesz, 4096), memsz, perm);
+    if (memsz > filesz && res)
         return res;
 
-    if ((res = sys_alloc_region(0, UTEMP, ROUNDUP(filesz, 4096), PTE_P | PTE_U | PTE_W)))
-        return res;
+    if (filesz == 0)
+        return 0;
 
-    if ((res = seek(fd, fileoffset)))
+    res = sys_alloc_region(0, UTEMP, ROUNDUP(filesz, 4096), PTE_P | PTE_U | PTE_W);
+    if (res)
         return res;
-
-    if ((res = readn(fd, UTEMP, filesz)) < 0)
+    res = seek(fd, fileoffset);
+    if (res)
         return res;
-
-    if ((res = sys_map_region(0, UTEMP, child, (void *)va, ROUNDUP(filesz, 4096), perm)))
+    res = readn(fd, UTEMP, filesz);
+    if (res < 0)
         return res;
-
-    if ((res = sys_unmap_region(0, UTEMP, ROUNDUP(filesz, 4096))))
+    res = sys_map_region(0, UTEMP, child, (void *)va, ROUNDUP(filesz, 4096), perm);
+    if (res)
+        return res;
+    res = sys_unmap_region(0, UTEMP, ROUNDUP(filesz, 4096));
+    if (res)
         return res;
 
     return 0;

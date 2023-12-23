@@ -10,8 +10,9 @@
 
 .globl entry
 entry:
-    # Set up kernel stack
+    # Disable interrupts.
     cli
+    # Set up kernel stack
     leaq bootstacktop(%rip),%rsp
     xor %ebp, %ebp
 
@@ -46,7 +47,6 @@ save_trapframe_syscall:
     # fallthrough
 
 save_trapframe:
-    cli
     orl $FL_IF, saved_rflags(%rip)
 
     # We already pushed ss,rsp,rflags,cs,rip
@@ -72,7 +72,6 @@ sys_yield:
     call csys_yield
     jmp .
 
-# LAB 3: Your code here:
 .globl sys_exit
 .type  sys_exit, @function
 sys_exit:

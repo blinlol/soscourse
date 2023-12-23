@@ -29,7 +29,6 @@ int mon_dumpcmos(int argc, char **argv, struct Trapframe *tf);
 int mon_start(int argc, char **argv, struct Trapframe *tf);
 int mon_stop(int argc, char **argv, struct Trapframe *tf);
 int mon_frequency(int argc, char **argv, struct Trapframe *tf);
-int mon_author(int argc, char **argv, struct Trapframe *tf);
 int mon_memory(int argc, char **argv, struct Trapframe *tf);
 int mon_pagetable(int argc, char **argv, struct Trapframe *tf);
 int mon_virt(int argc, char **argv, struct Trapframe *tf);
@@ -49,7 +48,6 @@ static struct Command commands[] = {
         {"timer_start", "Start timer", mon_start},
         {"timer_stop", "Stop timer", mon_stop},
         {"timer_freq", "Get timer frequency", mon_frequency},
-        {"author", "Print author of the OS", mon_author},
         {"memory", "Display allocated memory pages", mon_memory},
         {"pagetable", "Display current page table", mon_pagetable},
         {"virt", "Display virtual memory tree", mon_virt},
@@ -81,39 +79,28 @@ mon_kerninfo(int argc, char **argv, struct Trapframe *tf) {
 
 int
 mon_backtrace(int argc, char **argv, struct Trapframe *tf) {
-    // LAB 2: Your code here
-    cprintf("Stack backtrace:\n");
-    
-    // read current rbp
     uint64_t rbp = read_rbp();
-    uint64_t rip;
+    uint64_t rip; 
     struct Ripdebuginfo info;
-    // go throw stack
-    while (rbp != 0 && rbp != 0x8042117000){
-        // rip = *(rbp + 1); rbp = *rbp
-        rip = *(uint64_t*)(rbp + 8);
-        debuginfo_rip(rip, &info);
-        cprintf("  rbp %016lx  rip %016lx\n", rbp, rip);
-        cprintf("    %s:%d: %s+%ld\n", info.rip_file, info.rip_line, info.rip_fn_name, rip - (uint64_t)info.rip_fn_addr);
-        rbp = *((uint64_t*)rbp);
-    }
-    return 0;
-}
-
-int 
-mon_author(int argc, char **argv, struct Trapframe *tf){
-    cprintf("Balabanov Fedor\n");
+    cprintf("Stack backtrace:\n");
+    do {
+	    rip = *(uint64_t *)(rbp + 8);
+	    debuginfo_rip(rip, &info);
+	    cprintf("  rbp %016lx  rip %016lx\n", rbp, rip);
+	    cprintf("    %s:%d: %*s+%ld\n", info.rip_file, info.rip_line,
+	        info.rip_fn_namelen, info.rip_fn_name, rip - info.rip_fn_addr);
+	    rbp = *(uint64_t *)rbp;
+    } while (rbp != 0);
     return 0;
 }
 
 /* Implement timer_start (mon_start), timer_stop (mon_stop), timer_freq (mon_frequency) commands. */
-// LAB 5: Your code here:
 
 int
 mon_start(int argc, char **argv, struct Trapframe *tf) {
-    if (argc != 2){
-        cprintf("usage: cmd timer_name\ntimer_name = hpet0 | hpet1\n");
-        return 0;
+    if (argc != 2) {
+        cprintf("timer_start: no given name of timer.\n");
+        return 1;
     }
     timer_start(argv[1]);
     return 0;
@@ -121,22 +108,22 @@ mon_start(int argc, char **argv, struct Trapframe *tf) {
 
 int
 mon_stop(int argc, char **argv, struct Trapframe *tf) {
+    if (argc != 1)
+        return 1;
     timer_stop();
     return 0;
 }
 
 int
 mon_frequency(int argc, char **argv, struct Trapframe *tf) {
-    if (argc != 2){
-        cprintf("usage: cmd timer_name\ntimer_name = hpet0 | hpet1\n");
-        return 0;
+    if (argc != 2) {
+        cprintf("timer_freq: no given name of timer.\n");
+        return 1;
     }
     timer_cpu_frequency(argv[1]);
     return 0;
 }
 
-
-// LAB 6: Your code here
 /* Implement memory (mon_memory) commands. */
 int
 mon_memory(int argc, char **argv, struct Trapframe *tf) {
@@ -148,13 +135,13 @@ mon_memory(int argc, char **argv, struct Trapframe *tf) {
  * (using dump_virtual_tree(), dump_page_table())*/
 int
 mon_pagetable(int argc, char **argv, struct Trapframe *tf) {
-    // LAB 7: Your code here
+    dump_page_table(current_space->pml4);
     return 0;
 }
 
 int
 mon_virt(int argc, char **argv, struct Trapframe *tf) {
-    // LAB 7: Your code here
+    dump_virtual_tree(current_space->root, MAX_CLASS);
     return 0;
 }
 
@@ -166,20 +153,15 @@ mon_dumpcmos(int argc, char **argv, struct Trapframe *tf) {
     // 10: 00 ..
     // Make sure you understand the values read.
     // Hint: Use cmos_read8()/cmos_write8() functions.
-    // LAB 4: Your code here
-    uint8_t size = 128;
-    uint8_t reg = 0;
-    for (int row = 0; row < size / 16 ; row ++){
-        cprintf("%02x:", row * 16);
-        for (int col = 0; col < 16; col ++){
-            cprintf(" %02x", cmos_read8(reg));   
-            reg ++;
-        }
+    for (int i = 0; i < CMOS_START + CMOS_SIZE; i += 0x10) {
+        cprintf("%02x:", i);
+        for (int j = i; j < i + 0x10; j++)
+            cprintf(" %02x", cmos_read8(j));
         cprintf("\n");
     }
-
     return 0;
 }
+
 /* Kernel monitor command interpreter */
 
 static int

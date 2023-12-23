@@ -59,22 +59,15 @@ int
 foreach_shared_region(int (*fun)(void *start, void *end, void *arg), void *arg) {
     /* Calls fun() for every shared region.
      * NOTE: Skip over larger pages/page directories for efficiency */
-    // LAB 11: Your code here:
+    for (uintptr_t addr_4 = 0; addr_4 < MAX_USER_ADDRESS; addr_4 += 1ULL << PML4_SHIFT)
+        if (uvpml4[VPML4(addr_4)] & PTE_P)
+            for (uintptr_t addr_3 = 0; addr_3 < 1ULL << PML4_SHIFT; addr_3 += 1ULL << PDP_SHIFT)
+                if (uvpdp[VPDP(addr_4 + addr_3)] & PTE_P)
+                    for (uintptr_t addr_2 = 0; addr_2 < 1ULL << PDP_SHIFT; addr_2 += 1ULL << PD_SHIFT)
+                        if (uvpd[VPD(addr_4 + addr_3 + addr_2)] & PTE_P)
+                            for (uintptr_t addr_1 = 0; addr_1 < 1ULL << PD_SHIFT; addr_1 += 1ULL << PT_SHIFT)
+                                if (uvpt[VPT(addr_4 + addr_3 + addr_2 + addr_1)] & PTE_P && uvpt[VPT(addr_4 + addr_3 + addr_2 + addr_1)] & PTE_SHARE)
+                                    fun((void *)(addr_4 + addr_3 + addr_2 + addr_1), (void *)(addr_4 + addr_3 + addr_2 + addr_1 + PAGE_SIZE), arg);
 
-    int res=0;
-    for (uintptr_t addr = 0; addr < MAX_USER_ADDRESS; addr += PAGE_SIZE) {
-        if (!(uvpml4[VPML4(addr)] & PTE_P) || 
-            !(uvpdp[VPDP(addr)] & PTE_P) || 
-            !(uvpd[VPD(addr)] & PTE_P))
-            continue;
-        if (uvpt[VPT(addr)] & PTE_P && uvpt[VPT(addr)] & PTE_SHARE)
-            res = fun((void*)addr, (void *)(addr + PAGE_SIZE), arg);
-    }
-    return res;
-
-
-    // int res = 0;
-    // (void)fun, (void)arg;
-
-    // return res;
+    return 0;
 }
