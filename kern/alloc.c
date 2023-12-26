@@ -28,6 +28,7 @@ void *
 test_alloc(uint8_t nbytes) {
 
     /* Make allocator thread-safe with the help of spin_lock/spin_unlock. */
+    // LAB 5
     lock_kernel();
 
     size_t nunits = (nbytes + sizeof(Header) - 1) / sizeof(Header) + 1;
@@ -78,6 +79,7 @@ test_free(void *ap) {
     Header *bp = (Header *)ap - 1;
 
     /* Make allocator thread-safe with the help of spin_lock/spin_unlock. */
+    // LAB 5
     lock_kernel();
 
     /* freed block at start or end of arena */

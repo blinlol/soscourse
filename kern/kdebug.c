@@ -52,6 +52,7 @@ load_user_dwarf_info(struct Dwarf_Addrs *addrs) {
     memset(addrs, 0, sizeof(*addrs));
 
     /* Load debug sections from curenv->binary elf image */
+    // LAB 8
     struct Elf * elf = (void *)binary;
     struct Secthdr * sh = (void *)(binary + elf->e_shoff);
     const char * table = (const char *)binary + sh[elf->e_shstrndx].sh_offset;
@@ -88,6 +89,7 @@ debuginfo_rip(uintptr_t addr, struct Ripdebuginfo *info) {
     struct Dwarf_Addrs addrs;
     /* Temporarily load kernel cr3 and return back once done.
      * Make sure that you fully understand why it is necessary. */
+    // LAB 8
     uint64_t old_cr3 = rcr3();
     if (old_cr3 != kspace.cr3)
         lcr3(kspace.cr3);
@@ -97,7 +99,7 @@ debuginfo_rip(uintptr_t addr, struct Ripdebuginfo *info) {
      * kernel debug info provided by bootloader
      * depending on whether addr is pointing to userspace
      * or kernel space */
-
+    // LAB 8
     if (addr >= MAX_USER_ADDRESS) // kernel space
         load_kernel_dwarf_info(&addrs);
     else
@@ -116,6 +118,7 @@ debuginfo_rip(uintptr_t addr, struct Ripdebuginfo *info) {
      * Hint: note that we need the address of `call` instruction, but rip holds
      * address of the next instruction, so we should substract 5 from it.
      * Hint: use line_for_address from kern/dwarf_lines.c */
+     // LAB 2
     int tmp_int = 0;
     res = line_for_address(&addrs, addr - CALL_INSN_LEN, line_offset, &tmp_int);
     if (res < 0) goto error;
@@ -127,6 +130,7 @@ debuginfo_rip(uintptr_t addr, struct Ripdebuginfo *info) {
      * Hint: use function_by_info from kern/dwarf.c
      * Hint: info->rip_fn_name can be not NULL-terminated,
      * string returned by function_by_info will always be */
+    // LAB 2
     uintptr_t tmp_uintptr = 0;
     res = function_by_info(&addrs, addr - CALL_INSN_LEN, offset, &tmp_buf, &tmp_uintptr);
     if (res < 0) goto error;
@@ -151,6 +155,7 @@ find_function(const char *const fname) {
      * and naive_address_by_fname which performs full traversal of DIE tree.
      * It may also be useful to look to kernel symbol table for symbols defined
      * in assembly. */
+    // LAB 3
     struct Dwarf_Addrs addrs;
     uintptr_t fn_offset;
     load_kernel_dwarf_info(&addrs);

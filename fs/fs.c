@@ -58,6 +58,7 @@ alloc_block(void) {
     /* The bitmap consists of one or more blocks.  A single bitmap block
      * contains the in-use bits for BLKBITSIZE blocks.  There are
      * super->s_nblocks blocks in the disk altogether. */
+    // LAB 10
     for (blockno_t cur_block = 0; cur_block < super->s_nblocks; cur_block++)
         if (block_is_free(cur_block)) {
             CLRBIT(bitmap, cur_block);
@@ -125,6 +126,7 @@ fs_init(void) {
  * Hint: Don't forget to clear any block you allocate. */
 int
 file_block_walk(struct File *f, blockno_t filebno, blockno_t **ppdiskbno, bool alloc) {
+    // LAB 10
     if (filebno >= NDIRECT + NINDIRECT)
         return -E_INVAL;
 
@@ -157,6 +159,7 @@ file_block_walk(struct File *f, blockno_t filebno, blockno_t **ppdiskbno, bool a
  * Hint: Use file_block_walk and alloc_block. */
 int
 file_get_block(struct File *f, blockno_t filebno, char **blk) {
+    // LAB 10
     int errno;
     blockno_t *pdiskbno;
     if ((errno = file_block_walk(f, filebno, &pdiskbno, 1)))

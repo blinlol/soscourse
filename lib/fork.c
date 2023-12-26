@@ -18,6 +18,10 @@
  */
 envid_t
 fork(void) {
+// LAB 9: Your code here.
+
+    // panic("fork() is not implemented");
+
     envid_t envid = sys_exofork();
     if (envid < 0)
         return envid;

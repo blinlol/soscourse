@@ -19,6 +19,8 @@
  * Destroys the environment on memory errors. */
 static int
 sys_cputs(const char *s, size_t len) {
+// LAB 8: Your code here
+
     /* Check that the user has permission to read memory [s, s+len).
      * Destroy the environment if not. */
     user_mem_assert(curenv, s, len, PROT_R | PROT_USER_);
@@ -36,12 +38,15 @@ sys_cputs(const char *s, size_t len) {
  * Returns the character, or 0 if there is no input waiting. */
 static int
 sys_cgetc(void) {
+// LAB 8: Your code here
     return cons_getc();
 }
 
 /* Returns the current environment's envid. */
 static envid_t
 sys_getenvid(void) {
+// LAB 8: Your code here
+
     return curenv->env_id;
 }
 
@@ -52,6 +57,7 @@ sys_getenvid(void) {
  *      or the caller doesn't have permission to change envid. */
 static int
 sys_env_destroy(envid_t envid) {
+    // LAB 8
     struct Env *env;
     if (envid2env(envid, &env, 1))
         return -E_BAD_ENV;
@@ -70,6 +76,7 @@ sys_env_destroy(envid_t envid) {
 /* Deschedule current environment and pick a different one to run. */
 static void
 sys_yield(void) {
+// LAB 9: Your code here
     sched_yield();
 }
 
@@ -84,6 +91,8 @@ sys_exofork(void) {
      * status is set to ENV_NOT_RUNNABLE, and the register set is copied
      * from the current environment -- but tweaked so sys_exofork
      * will appear to return 0. */
+
+    // LAB 9: Your code here
     struct Env *env;
     int status = env_alloc(&env, curenv->env_id, ENV_TYPE_USER);
     if (status)
@@ -109,6 +118,8 @@ sys_env_set_status(envid_t envid, int status) {
      * You should set envid2env's third argument to 1, which will
      * check whether the current environment has permission to set
      * envid's status. */
+
+    // LAB 9: Your code here
     struct Env* env;
     if (envid2env(envid, &env, 1))
         return -E_BAD_ENV;
@@ -130,6 +141,7 @@ sys_env_set_status(envid_t envid, int status) {
  *      or the caller doesn't have permission to change envid. */
 static int
 sys_env_set_pgfault_upcall(envid_t envid, void *func) {
+// LAB 9: Your code here:
     struct Env* env;
     if (envid2env(envid, &env, 1))
         return -E_BAD_ENV;
@@ -162,6 +174,8 @@ sys_env_set_pgfault_upcall(envid_t envid, void *func) {
  *      or to allocate any necessary page tables. */
 static int
 sys_alloc_region(envid_t envid, uintptr_t addr, size_t size, int perm) {
+// LAB 9: Your code here:
+
     struct Env* env;
     if (envid2env(envid, &env, 1))
         return -E_BAD_ENV;
@@ -202,6 +216,7 @@ sys_alloc_region(envid_t envid, uintptr_t addr, size_t size, int perm) {
 static int
 sys_map_region(envid_t srcenvid, uintptr_t srcva,
                envid_t dstenvid, uintptr_t dstva, size_t size, int perm) {
+// LAB 9: Your code here
     struct Env *srcenv, *dstenv;
     if (envid2env(srcenvid, &srcenv, 1) || envid2env(dstenvid, &dstenv, 1))
         return -E_BAD_ENV;
@@ -226,6 +241,8 @@ sys_map_region(envid_t srcenvid, uintptr_t srcva,
 static int
 sys_unmap_region(envid_t envid, uintptr_t va, size_t size) {
     /* Hint: This function is a wrapper around unmap_region(). */
+
+    // LAB 9: Your code here
     struct Env* env;
     if (envid2env(envid, &env, 1))
         return -E_BAD_ENV;
@@ -253,6 +270,7 @@ sys_unmap_region(envid_t envid, uintptr_t va, size_t size) {
  *  -E_NO_ENT if address is already used. */
 static int
 sys_map_physical_region(uintptr_t pa, envid_t envid, uintptr_t va, size_t size, int perm) {
+    // LAB 10
     struct Env * env_fs;
     if (envid2env(envid, &env_fs, true) || env_fs->env_type != ENV_TYPE_FS)
         return -E_BAD_ENV;
@@ -306,6 +324,7 @@ sys_map_physical_region(uintptr_t pa, envid_t envid, uintptr_t va, size_t size, 
  *      address space. */
 static int
 sys_ipc_try_send(envid_t envid, uint32_t value, uintptr_t srcva, size_t size, int perm) {
+    // LAB 9
     struct Env* env;
     if (envid2env(envid, &env, 0))
         return -E_BAD_ENV;
@@ -353,6 +372,7 @@ sys_ipc_try_send(envid_t envid, uint32_t value, uintptr_t srcva, size_t size, in
  *  -E_INVAL if maxsize is not page aligned. */
 static int
 sys_ipc_recv(uintptr_t dstva, uintptr_t maxsize) {
+    // LAB 9
     if (PAGE_OFFSET(maxsize) || (dstva < MAX_USER_ADDRESS &&
         (PAGE_OFFSET(dstva) || maxsize == 0)))
         return -E_INVAL;
@@ -380,6 +400,8 @@ sys_ipc_recv(uintptr_t dstva, uintptr_t maxsize) {
  */
 static int
 sys_env_set_trapframe(envid_t envid, struct Trapframe *tf) {
+// LAB 11: Your code here
+
     struct Env* env;
     if (envid2env(envid, &env, 0))
         return -E_BAD_ENV;
@@ -402,6 +424,7 @@ sys_env_set_trapframe(envid_t envid, struct Trapframe *tf) {
  * from 1970-01-01 00:00:00 UTC. */
 static int
 sys_gettime(void) {
+    // LAB 12
     return gettime();
 }
 
@@ -415,6 +438,7 @@ sys_gettime(void) {
  */
 static int
 sys_region_refs(uintptr_t addr, size_t size, uintptr_t addr2, uintptr_t size2) {
+    // Lab 10
     if (addr2 != MAX_USER_ADDRESS)
         return region_maxref(&curenv->address_space, addr, size) -
                region_maxref(&curenv->address_space, addr2, size2);
@@ -427,6 +451,8 @@ uintptr_t
 syscall(uintptr_t syscallno, uintptr_t a1, uintptr_t a2, uintptr_t a3, uintptr_t a4, uintptr_t a5, uintptr_t a6) {
     /* Call the function corresponding to the 'syscallno' parameter.
      * Return any appropriate return value. */
+
+    // LAB 8: Your code here
     switch (syscallno) {
         case SYS_cputs:
             return sys_cputs((const char *)a1, (size_t)a2);
@@ -436,6 +462,8 @@ syscall(uintptr_t syscallno, uintptr_t a1, uintptr_t a2, uintptr_t a3, uintptr_t
             return sys_getenvid();
         case SYS_env_destroy:
             return sys_env_destroy((envid_t)a1);
+
+    // LAB 9: Your code here
         case SYS_exofork:
             return sys_exofork();
         case SYS_alloc_region:
@@ -455,12 +483,15 @@ syscall(uintptr_t syscallno, uintptr_t a1, uintptr_t a2, uintptr_t a3, uintptr_t
             return sys_ipc_try_send((envid_t)a1, (uint32_t)a2, a3,(size_t)a4,(int)a5);
         case SYS_ipc_recv:
             return sys_ipc_recv(a1, a2);
+// LAB 10: Your code here
         case SYS_region_refs:
             return sys_region_refs(a1, (size_t)a2, a3, a4);
         case SYS_map_physical_region:
             return sys_map_physical_region(a1, (envid_t)a2, a3, (size_t)a4, (int)a5);
+        // LAB 11
         case SYS_env_set_trapframe:
             return sys_env_set_trapframe((envid_t)a1, (struct Trapframe *)a2);
+        // LAB 12
         case SYS_gettime:
             return sys_gettime();
         default:

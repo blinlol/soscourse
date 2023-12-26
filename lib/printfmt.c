@@ -195,7 +195,7 @@ vprintfmt(void (*putch)(int, void *), void *put_arg, const char *fmt, va_list ap
                 while (width-- > 0) putch(padc, put_arg);
             }
 
-            for (; (ch = *ptr++) && (precision < 0 || --precision >= 0); width--) {
+            for (;(precision < 0 || --precision >= 0) && (ch = *ptr++) ; width--) {
                 putch(altflag && (ch < ' ' || ch > '~') ? '?' : ch, put_arg);
             }
 
@@ -220,6 +220,7 @@ vprintfmt(void (*putch)(int, void *), void *put_arg, const char *fmt, va_list ap
             goto number;
 
         case 'o': /* (unsigned) octal */
+            // LAB 1
             num = get_unsigned(&aq, lflag, zflag);
             int max_oct_deg = 1, buf = num;
             while (buf > 7) max_oct_deg *= 8, buf /= 8;

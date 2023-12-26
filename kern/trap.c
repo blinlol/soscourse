@@ -126,7 +126,14 @@ void serial_thdlr(void);
 
 void
 trap_init(void) {
+// LAB 4: Your code here
+    //idt[IRQ_OFFSET + IRQ_CLOCK] = GATE(0, GD_KT, clock_thdlr, 0);
+    // LAB 5: Your code here
+    //idt[IRQ_OFFSET + IRQ_TIMER] = GATE(0, GD_KT, timer_thdlr, 0);
+
+
     /* Insert trap handlers into IDT */
+    // LAB 8
     idt[IRQ_OFFSET + IRQ_CLOCK] = GATE(0, GD_KT, clock_thdlr, 0);
     idt[IRQ_OFFSET + IRQ_TIMER] = GATE(0, GD_KT, timer_thdlr, 0);
     idt[T_DIVIDE] = GATE(0, GD_KT, (uint64_t)divide_thdlr, 0);
@@ -157,6 +164,7 @@ trap_init(void) {
      * can legally happen during normal kernel
      * code execution */
     idt[T_PGFLT].gd_ist = 1;
+    // LAB 11
 
     /* Per-CPU setup */
     trap_init_percpu();
@@ -275,9 +283,11 @@ trap_dispatch(struct Trapframe *tf) {
         return;
     case T_PGFLT:
         /* Handle processor exceptions. */
+// LAB 9: Your code here.
         page_fault_handler(tf);
         return;
     case T_BRKPT:
+// LAB 8: Your code here
         monitor(tf);
         return;
     case IRQ_OFFSET + IRQ_SPURIOUS:
@@ -293,10 +303,13 @@ trap_dispatch(struct Trapframe *tf) {
     case IRQ_OFFSET + IRQ_CLOCK:
         /* In init.c timers_schedule timer_for_schedule initializes
          * with correspondant handler. */
+        // LAB 5
+        // LAB 12
         timer_for_schedule->handle_interrupts();
         vsys[VSYS_gettime] = gettime();
         sched_yield();
         return;
+        // LAB 11
     /* Handle keyboard (IRQ_KBD + kbd_intr()) and
      * serial (IRQ_SERIAL + serial_intr()) interrupts. */
     case IRQ_OFFSET + IRQ_KBD:
@@ -407,6 +420,8 @@ trap(struct Trapframe *tf) {
 
 static _Noreturn void
 page_fault_handler(struct Trapframe *tf) {
+// LAB 9: Your code here:
+
     uintptr_t cr2 = rcr2();
 
     /* Handle kernel-mode page faults. */
@@ -465,15 +480,18 @@ page_fault_handler(struct Trapframe *tf) {
 
     /* Force allocation of exception stack page to prevent memcpy from
      * causing pagefault during another pagefault */
+// LAB 9: Your code here:
     force_alloc_page(&curenv->address_space, USER_EXCEPTION_STACK_TOP - PAGE_SIZE, PAGE_SIZE);
 
     /* Assert existance of exception stack */
+    // LAB 9
     uintptr_t user_rsp = tf->tf_rsp < USER_EXCEPTION_STACK_TOP && tf->tf_rsp > USER_EXCEPTION_STACK_TOP - PAGE_SIZE ?
         tf->tf_rsp - sizeof(uintptr_t) : USER_EXCEPTION_STACK_TOP;
     user_rsp -= sizeof(struct UTrapframe);
     user_mem_assert(curenv, (void *)user_rsp, sizeof(struct UTrapframe), PROT_W);
 
     /* Build local copy of UTrapframe */
+    // LAB 9
     struct UTrapframe user_tf;
     user_tf.utf_fault_va = cr2;
     user_tf.utf_err      = tf->tf_err;
@@ -485,6 +503,7 @@ page_fault_handler(struct Trapframe *tf) {
     tf->tf_rip        = (uintptr_t)curenv->env_pgfault_upcall;
 
     /* And then copy it userspace (nosan_memcpy()) */
+    // LAB 9
     struct AddressSpace *old = switch_address_space(&curenv->address_space);
     set_wp(0);
     nosan_memcpy((void *)(user_rsp), (void *)&user_tf, sizeof(struct UTrapframe));
@@ -492,9 +511,11 @@ page_fault_handler(struct Trapframe *tf) {
     switch_address_space(old);
 
     /* Reset in_page_fault flag */
+    // LAB 9
     in_page_fault = false;
 
     /* Rerun current environment */
+    // LAB 9
     env_run(curenv);
 
     while (1)

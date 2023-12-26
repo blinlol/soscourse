@@ -276,6 +276,7 @@ map_segment(envid_t child, uintptr_t va, size_t memsz,
         fileoffset -= res;
     }
 
+// LAB 11: Your code here
     /* NOTE: There's restriction on maximal filesz
      * for each program segment (HUGE_PAGE_SIZE) */
     if (filesz > HUGE_PAGE_SIZE || filesz > memsz)

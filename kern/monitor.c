@@ -79,6 +79,7 @@ mon_kerninfo(int argc, char **argv, struct Trapframe *tf) {
 
 int
 mon_backtrace(int argc, char **argv, struct Trapframe *tf) {
+    // LAB 2
     uint64_t rbp = read_rbp();
     uint64_t rip; 
     struct Ripdebuginfo info;
@@ -95,6 +96,7 @@ mon_backtrace(int argc, char **argv, struct Trapframe *tf) {
 }
 
 /* Implement timer_start (mon_start), timer_stop (mon_stop), timer_freq (mon_frequency) commands. */
+// LAB 5: Your code here:
 
 int
 mon_start(int argc, char **argv, struct Trapframe *tf) {
@@ -124,6 +126,8 @@ mon_frequency(int argc, char **argv, struct Trapframe *tf) {
     return 0;
 }
 
+
+// LAB 6: Your code here
 /* Implement memory (mon_memory) commands. */
 int
 mon_memory(int argc, char **argv, struct Trapframe *tf) {
@@ -135,12 +139,14 @@ mon_memory(int argc, char **argv, struct Trapframe *tf) {
  * (using dump_virtual_tree(), dump_page_table())*/
 int
 mon_pagetable(int argc, char **argv, struct Trapframe *tf) {
+    // LAB 7
     dump_page_table(current_space->pml4);
     return 0;
 }
 
 int
 mon_virt(int argc, char **argv, struct Trapframe *tf) {
+    // LAB 7
     dump_virtual_tree(current_space->root, MAX_CLASS);
     return 0;
 }

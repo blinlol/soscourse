@@ -97,16 +97,20 @@ env_init(void) {
     /* Allocate vsys array with kzalloc_region().
      * Don't forget about rounding.
      * kzalloc_region only works with current_space != NULL */
+// LAB 12: Your code here
 
     /* Allocate envs array with kzalloc_region().
      * Don't forget about rounding.
      * kzalloc_region() only works with current_space != NULL */
+
+    // LAB 8
     if (current_space != NULL) {
         envs = kzalloc_region(NENV * sizeof(*envs));
         memset(envs, 0, ROUNDUP(NENV * sizeof(*envs), PAGE_SIZE));
     
         /* Map envs to UENVS read-only,
         * but user-accessible (with PROT_USER_ set) */
+// LAB 8: Your code here
         map_region(current_space, UENVS, &kspace, (uintptr_t)envs, UENVS_SIZE, PROT_R | PROT_USER_);
 
         vsys = kzalloc_region(UVSYS_SIZE);
@@ -115,6 +119,7 @@ env_init(void) {
     }
 
     /* Set up envs array */
+    // LAB 3
     env_free_list = envs;
     struct Env *next = NULL;
     for (int i = NENV - 1; i >= 0; i--) {
@@ -182,6 +187,7 @@ env_alloc(struct Env **newenv_store, envid_t parent_id, enum EnvType type) {
     env->env_tf.tf_ss = GD_KD;
     env->env_tf.tf_cs = GD_KT;
 
+// LAB 3: Your code here:
     static uintptr_t stack_top = 0x2000000;
     env->env_tf.tf_rsp = stack_top - 2 * (env - envs) * PAGE_SIZE;
     env->env_tf.tf_rflags = read_rflags();
@@ -217,6 +223,9 @@ env_alloc(struct Env **newenv_store, envid_t parent_id, enum EnvType type) {
  */
 static int
 bind_functions(struct Env *env, uint8_t *binary, size_t size, uintptr_t image_start, uintptr_t image_end) {
+// LAB 3: Your code here:
+
+    /* NOTE: find_function from kdebug.c should be used */
     struct Elf *elf = (struct Elf *)binary;
     struct Secthdr *sh = (struct Secthdr *)(binary + elf->e_shoff);
     const char *sh_str = (char *)binary + sh[elf->e_shstrndx].sh_offset;
@@ -305,6 +314,7 @@ bind_functions(struct Env *env, uint8_t *binary, size_t size, uintptr_t image_st
  *   What?  (See env_run() and env_pop_tf() below.) */
 static int
 load_icode(struct Env *env, uint8_t *binary, size_t size) {
+    // LAB 3
     struct Elf * elf = (void *)binary;
     if (elf->e_magic != ELF_MAGIC) {
         cprintf("ELF file has magic %08X instead of %08X\n", elf->e_magic, ELF_MAGIC);
@@ -354,7 +364,7 @@ load_icode(struct Env *env, uint8_t *binary, size_t size) {
     env->env_tf.tf_rip = elf->e_entry;
     
     switch_address_space(&kspace);
-    
+    // LAB 8
     /* NOTE: When merging origin/lab10 put this hunk at the end
      *       of the function, when user stack is already mapped. */
     if (env->env_type == ENV_TYPE_FS) {
@@ -376,6 +386,8 @@ load_icode(struct Env *env, uint8_t *binary, size_t size) {
  */
 void
 env_create(uint8_t *binary, size_t size, enum EnvType type) {
+// LAB 8: Your code here
+    // LAB 3: Your code here
     struct Env *env;
     if (env_alloc(&env, 0, type) < 0) {
         panic("env_alloc: can't allocate new environment.");
@@ -383,6 +395,7 @@ env_create(uint8_t *binary, size_t size, enum EnvType type) {
 
     env->env_type = type;
     env->binary = binary;
+    // LAB 10
     env->env_tf.tf_rflags &= ~FL_IOPL_MASK;
     if (type == ENV_TYPE_FS)
         env->env_tf.tf_rflags |= FL_IOPL_3;
@@ -430,6 +443,9 @@ env_destroy(struct Env *env) {
     /* If env is currently running on other CPUs, we change its state to
      * ENV_DYING. A zombie environment will be freed the next time
      * it traps to the kernel. */
+    // LAB 3
+    // LAB 8
+    // LAB 10
     env->env_status = ENV_DYING;
     env_free(env);
     if (env == curenv)
@@ -518,6 +534,9 @@ env_run(struct Env *env) {
         if (curenv) cprintf("[%08X] env stopped: %s\n", curenv->env_id, state[curenv->env_status]);
         cprintf("[%08X] env started: %s\n", env->env_id, state[env->env_status]);
     }
+
+    // LAB 3: Your code here
+    // LAB 8: Your code here
 
     if (curenv) {
         if (curenv->env_status == ENV_RUNNING) {

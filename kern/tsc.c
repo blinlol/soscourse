@@ -190,6 +190,9 @@ print_timer_error(void) {
 
 /* Use print_time function to print timert result
  * Use print_timer_error function to print error. */
+
+// LAB 5: Your code here:
+
 static bool timer_started = 0;
 static int timer_id = -1;
 static uint64_t timer = 0;

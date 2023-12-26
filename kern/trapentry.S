@@ -77,6 +77,7 @@ _alltraps:
   call trap
   jmp .
 
+# LAB 8: Your code here
 # Use TRAPHANDLER or TRAPHANDLER_NOEC to setup
 # all trap handlers' entry points
 # (Look up their list in inc/trap.h)

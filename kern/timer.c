@@ -99,6 +99,7 @@ acpi_find_table(const char *sign) {
      * HINT: RSDP address is stored in uefi_lp->ACPIRoot
      * HINT: You may want to distunguish RSDT/XSDT
      */
+    // LAB 5
     RSDP * rsdp = mmio_map_region(uefi_lp->ACPIRoot, sizeof(RSDP));
     if (!verify_table(rsdp, 20))
         panic("ACPI RSDP is corrupted");
@@ -211,6 +212,8 @@ make_fs_args(char *ustack_top) {
 /* Obtain and map FADT ACPI table address. */
 FADT *
 get_fadt(void) {
+// LAB 5: Your code here
+    // (use acpi_find_table)
     // HINT: ACPI table signatures are
     //       not always as their names
     // We need to get in from acpi_find_table only once,
@@ -224,6 +227,7 @@ get_fadt(void) {
 /* Obtain and map RSDP ACPI table address. */
 HPET *
 get_hpet(void) {
+    // LAB 5
     // We need to get it from acpi_find_table only once,
     // so thats why we use static here.
     static HPET *hpet;
@@ -336,6 +340,7 @@ hpet_get_main_cnt(void) {
  * compare with. (page 19-20) */
 void
 hpet_enable_interrupts_tim0(void) {
+    // LAB 5
     hpetReg->GEN_CONF |= HPET_LEG_RT_CNF;
     /* TimerX configuration is described on page 16-18
      * We enable interrupts, set value, enable periodic interrupts. */
@@ -350,6 +355,7 @@ hpet_enable_interrupts_tim0(void) {
 
 void
 hpet_enable_interrupts_tim1(void) {
+    // LAB 5
     hpetReg->GEN_CONF |= HPET_LEG_RT_CNF;
     hpetReg->TIM1_CONF = 0;
     hpetReg->TIM1_CONF |= (IRQ_CLOCK << 9);
@@ -376,6 +382,7 @@ hpet_handle_interrupts_tim1(void) {
 uint64_t
 hpet_cpu_frequency(void) {
     static uint64_t cpu_freq;
+    // LAB 5
     if (cpu_freq)
         return cpu_freq;
 
@@ -406,6 +413,7 @@ pmtimer_get_timeval(void) {
 uint64_t
 pmtimer_cpu_frequency(void) {
     static uint64_t cpu_freq;
+    // LAB 5
     if (cpu_freq)
         return cpu_freq;
 

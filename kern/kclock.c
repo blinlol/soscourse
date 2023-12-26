@@ -24,6 +24,7 @@
 uint8_t
 cmos_read8(uint8_t reg) {
     /* MC146818A controller */
+    // LAB 4
     uint8_t res = 0;
     outb(CMOS_CMD, reg | CMOS_NMI_LOCK);
     res = inb(CMOS_DATA);
@@ -33,6 +34,7 @@ cmos_read8(uint8_t reg) {
 
 void
 cmos_write8(uint8_t reg, uint8_t value) {
+    // LAB 4
     outb(CMOS_CMD, reg | CMOS_NMI_LOCK);
     outb(CMOS_DATA, value);
     nmi_enable();
@@ -45,6 +47,7 @@ cmos_read16(uint8_t reg) {
 
 static void
 rtc_timer_pic_interrupt(void) {
+// LAB 4: Your code here
     // Enable PIC interrupts.
     pic_irq_unmask(IRQ_CLOCK);
 }
@@ -104,6 +107,7 @@ get_time(void) {
 
 int
 gettime(void) {
+    // LAB 12
     while (cmos_read8(RTC_AREG) & RTC_UPDATE_IN_PROGRESS);
     int t_start = get_time(), t_end = get_time();
     if (t_start != t_end)
@@ -113,6 +117,7 @@ gettime(void) {
 
 void
 rtc_timer_init(void) {
+// LAB 4: Your code here
     // (use cmos_read8()/cmos_write8())
     cmos_write8(RTC_AREG, cmos_read8(RTC_AREG) | 0xF);
     cmos_write8(RTC_BREG, cmos_read8(RTC_BREG) | RTC_PIE);

@@ -7,6 +7,7 @@
 # so that they can be used in C as if they were ordinary global arrays
 # TIP: Use constants UVSYS, UENVS, UVPT, UVPD, UVPDP, UVPML4
 #      via '.set' and '.global' assembly directives
+# LAB 12
 .globl envs
 .set envs, UENVS
 .globl vsys
