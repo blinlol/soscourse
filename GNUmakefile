@@ -283,6 +283,7 @@ all: .git/hooks/post-checkout .git/hooks/pre-commit
 .PRECIOUS:  $(OBJDIR)/kern/%.o \
 	   $(OBJDIR)/lib/%.o $(OBJDIR)/fs/%.o $(OBJDIR)/net/%.o \
 	   $(OBJDIR)/user/%.o \
+	   $(OBJDIR)/usb/%.o \
 	   $(OBJDIR)/prog/%.o
 
 KERN_CFLAGS := $(CFLAGS) -DJOS_KERNEL -DLAB=$(LAB) -mcmodel=large -m64
@@ -314,6 +315,7 @@ include prog/Makefrag
 else
 include user/Makefrag
 include fs/Makefrag
+include usb/Makefrag
 endif
 
 QEMUOPTS = -hda fat:rw:$(JOS_ESP) -serial mon:stdio -gdb tcp::$(GDBPORT)
@@ -323,6 +325,7 @@ IMAGES = $(OVMF_FIRMWARE) $(JOS_LOADER) $(OBJDIR)/kern/kernel $(JOS_ESP)/EFI/BOO
 QEMUOPTS += -drive file=$(OBJDIR)/fs/fs.img,if=none,id=nvm -device nvme,serial=deadbeef,drive=nvm
 IMAGES += $(OBJDIR)/fs/fs.img
 QEMUOPTS += -bios $(OVMF_FIRMWARE)
+QEMUOPTS += -device qemu-xhci # -device usb-host,vendorid=0x1d6b,productid=0x0002 1d6b:0002
 # QEMUOPTS += -debugcon file:$(UEFIDIR)/debug.log -global isa-debugcon.iobase=0x402
 
 define POST_CHECKOUT
