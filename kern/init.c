@@ -19,6 +19,22 @@
 #include <kern/kdebug.h>
 #include <kern/traceopt.h>
 
+
+
+
+// void usb_test(){
+//     struct PciDevice* xhci = find_pci_dev(12, 3);
+//     if (xhci){
+//         pci_print_info(xhci);
+//     }
+//     else {
+//         printf("XHCI not found\n");
+//     }
+// }
+
+
+
+
 void
 timers_init(void) {
     timertab[0] = timer_rtc;
@@ -178,9 +194,11 @@ i386_init(void) {
     ENV_CREATE(TEST, ENV_TYPE_USER);
 #else
     /* Touch all you want. */
-    ENV_CREATE(user_icode, ENV_TYPE_USER);
+    ENV_CREATE(usb_usb, ENV_TYPE_FS);
 #endif /* TEST* */
 #endif
+
+    // usb_test();
 
     /* Should not be necessary - drains keyboard because interrupt has given up. */
     kbd_intr();

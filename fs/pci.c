@@ -135,7 +135,7 @@ pci_print_info(struct PciDevice *pcid) {
             pcid->device, pcid->function);
 
     /* Print class info and base addresses */
-    cprintf(ANSII_FG_CYAN "  - %s\n", pci_class_descriptions[pcid->class]);
+    cprintf(ANSII_FG_CYAN "  - %s\n" ANSII_RESET, pci_class_descriptions[pcid->class]);
 
     /* Print base address registers. */
     for (uint8_t i = 0; i < PCI_BAR_COUNT; i++)

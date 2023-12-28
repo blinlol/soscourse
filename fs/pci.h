@@ -141,6 +141,8 @@ uintptr_t get_bar_address(struct PciDevice *pcid, uint32_t barno);
 
 void pci_init(char **argv);
 struct PciDevice *find_pci_dev(int class, int sub);
+static void pci_print_info(struct PciDevice *pcid);
+
 
 struct PcieIoOps {
     uint32_t (*read32)(struct PciDevice *pcid, uint8_t reg);
